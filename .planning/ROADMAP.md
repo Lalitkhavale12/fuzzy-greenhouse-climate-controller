@@ -13,6 +13,10 @@
 4. All four actuator inputs (heater, fan/cooler, fogger, vent) affect the state
 
 **Requirements:** MODEL-01, MODEL-02, MODEL-03, MODEL-04
+**Plans:** 1 plan
+
+Plans:
+- [ ] 01-01-PLAN.md — coupled ODE greenhouse plant + seedable weather generator + plain-assert suite + proof-of-work notebook
 
 ## Phase 2: Baseline Controllers
 **Goal:** On/off and PID controllers that track setpoints on the plant — the benchmarks to beat.
