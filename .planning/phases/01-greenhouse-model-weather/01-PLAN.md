@@ -26,6 +26,7 @@ must_haves:
     - "weather_profile.csv holds a synthetic 24h day/night temperature and RH cycle at 15-minute resolution — 97 rows, integer minutes 0..1440 — loads through a fail-fast validator, and is linearly interpolated per D-10 (MODEL-03)."
     - "The weather generator is seedable (D-12): two runs with the same seed produce byte-identical CSV output (MODEL-03)."
     - "greenhouse_model.py exposes a pure, stateless step(dt, actuators, weather_at_t, T_C, w_gkg) -> (T_C, w_gkg, rh_pct): two identical calls reproduce identical outputs, missing or unknown actuator keys fail fast, and state is clamped to physical bounds (MODEL-04)."
+    - "The plant coefficients ship as the importable D-07 params dict (12 named keys with documented defaults, probe-verified), so later tuning and GA phases change values, never code (D-07)."
   artifacts:
     - src/__init__.py
     - src/greenhouse_model.py
@@ -131,7 +132,7 @@ Copy-source discipline: RESEARCH.md (git-tracked, probe-verified this session) i
   </read_first>
   <action>
     Create `src/greenhouse_model.py` by copying RESEARCH.md Pattern 1 (lines 158-210) and Common Operation 2 (lines 310-323) verbatim, including:
-    - Module-level `params` dict (D-07) with the exact probe-verified coefficients: heater_power 100.0, fan_power 200.0, fog_power 20.0, mist_rate 7.4e-3, thermal_capacity 1.8e4, air_exchange_rate 1.25e-3, condensation_rate 1.5e-4, solar_gain 100.0, base_evap 2.5e-3, latent_heat_vol 1.508.
+    - Module-level `params` dict (D-07) with all 12 keys copied verbatim from PATTERNS.md lines 36-52 / RESEARCH.md lines 171-184 (verified identical): "C_vol" 1.8e4, "U_env" 5.0, "P_h" 100.0, "P_fan" 200.0, "P_fog" 20.0, "m_fog" 7.4e-3, "ACH" 4.5, "L_v" 1.508, "X_v" 1.25e-3, "E_base" 2.5e-3, "k_c" 1.5e-4, "A_sol" 100.0 — note U_env and ACH are load-bearing in the dT_dt envelope term params["U_env"] + params["L_v"]*u_v and must NOT be dropped.
     - `es_pa(T_C)` = 610.94 * exp(17.625*T/(T+243.04)) (Alduchov-Eskridge Magnus, Pa); `wsat_g_per_kg(T_C)` from it; `relative_humidity(w_gkg, T_C)` = 100 * w/wsat, clamped to [0, 100] (Pitfall 2).
     - `daytime_solar(t_hour, A_sol)` = A_sol * sin(pi*(t_hour-6)/12) for 06:00-18:00, else 0.0.
     - `step(dt, actuators, weather_at_t, T_C, w_gkg)` implementing the D-01 coupled energy/moisture balances (heater, fan/cooler with condensation sink when supersaturated, fogger humidification + cooling, vent exchange, solar, base evaporation), the linear duty mapping effect = rate * duty (D-06), forward Euler with the gate `assert (params["air_exchange_rate"] + params["condensation_rate"]) * dt < 1` (D-13/D-14; dt_crit ~714s, locked 60s has 12x margin), w clamped at wsat (Pitfall 1/2), returning the 3-tuple (T_C, w_gkg, rh_pct) per D-15/D-16.

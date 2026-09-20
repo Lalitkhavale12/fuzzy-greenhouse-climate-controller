@@ -363,14 +363,14 @@ def generate_weather_profile(out_path, seed=7, t_mean=20.0, t_amp=6.0,
 | A6 | Fit of "no clean one-knob mapping" (D-05) to fogger + vent: fogger couples T↓/w↑; vent couples both toward ambient | coupling matrix | Probe-verified numerically this session, so low risk; analytic signs confirm |
 | A7 | `tests/test_greenhouse_model.py` (plain-assert, pytest-compatible) as the D-04 framework shape | Validation Architecture | pytest is NOT installed (verified) — requiring it would add an install step and violate the zero-new-deps stack; plain-assert runs anywhere |
 
-## Open Questions
+## Open Questions (RESOLVED)
 
-1. **Solar gain magnitude (A_sol)**
+1. **Solar gain magnitude (A_sol)** — RESOLVED: ship A_sol=100 W/m³ as the documented default in the dict.
    - What we know: A daytime solar term is needed for D-09's day/night disturbance to substantively excite the plant; 100 W/m³ is mid-range glazing-transmitted gain.
    - What's unclear: exact value for the target greenhouse; not from a single authoritative source ([ASSUMED A4]).
    - Recommendation: ship A_sol=100 W/m³ as the documented default in the dict; it is a parameter (D-07) — planner should note the executor may calibrate to keep peak T ≤ 45 °C in the all-off run.
 
-2. **Exact CSV location (root vs `weather/` directory)**
+2. **Exact CSV location (root vs `weather/` directory)** — RESOLVED: `weather/weather_profile.csv`.
    - What we know: PROJECT.md says "data as CSV under `weather/` or root (exact layout is a planning-time decision)" per CONTEXT.md.
    - What's unclear: no prior art in repo to follow.
    - Recommendation: planner picks one (suggest `weather/weather_profile.csv`); the generator takes `output_path` so nothing else changes.
