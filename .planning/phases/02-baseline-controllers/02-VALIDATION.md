@@ -3,10 +3,11 @@ phase: "02"
 slug: "baseline-controllers"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-21"
+updated: "2026-09-21"
 ---
 
 # Phase 02 — Validation Strategy
@@ -41,14 +42,14 @@ created: "2026-09-21"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 02-01-01 | 01 | 1 | BASE-01 | T-02-01 / — | duties clipped [0,1]; unknown keys never emitted | unit | `python tests/test_baseline_controllers.py` (test_onoff_hysteresis) | ❌ W0 | ⬜ pending |
-| 02-01-02 | 01 | 1 | BASE-01 | — | heater/fan mutual exclusion | unit | same file (test_onoff_mutual_exclusion) | ❌ W0 | ⬜ pending |
-| 02-01-03 | 01 | 1 | BASE-02 | T-02-01 / — | finite inputs asserted; NaN cannot propagate | unit | same file (test_pid_signs) | ❌ W0 | ⬜ pending |
-| 02-01-04 | 01 | 1 | BASE-02 | — | anti-windup guard present, guarded IAE_T strictly lower | unit | same file (test_pid_antiwindup_improves) | ❌ W0 | ⬜ pending |
-| 02-01-05 | 01 | 1 | BASE-02 | — | I term live (P-only ablation shows large droop) | unit | same file (test_pid_integral_required) | ❌ W0 | ⬜ pending |
-| 02-01-06 | 01 | 1 | BASE-03 | T-02-02 / — | setpoints as fn args; exact key set; fresh-state determinism | unit | same file (test_controller_signatures) | ❌ W0 | ⬜ pending |
-| 02-01-07 | 01 | 2 | BASE-01/02/03 | — | 24h closed-loop runs assert/NaN-free; T-IAE < 60 °C·h; RH in [0,100] | integration | same file (test_closed_loop_24h) | ❌ W0 | ⬜ pending |
-| 02-01-08 | 01 | 2 | BASE-01/02 | — | notebook executes headless, PNG written | manual-only | `jupyter nbconvert --execute notebooks/02_baselines.ipynb` + PNG exists | ❌ W0 | ⬜ pending |
+| 02-01-01 | 01 | 1 | BASE-01 | T-02-01 / — | duties clipped [0,1]; unknown keys never emitted | unit | `python tests/test_baseline_controllers.py` (test_onoff_hysteresis) | ✅ | ✅ green |
+| 02-01-02 | 01 | 1 | BASE-01 | — | heater/fan mutual exclusion | unit | same file (test_onoff_mutual_exclusion) | ✅ | ✅ green |
+| 02-01-03 | 01 | 1 | BASE-02 | T-02-01 / — | finite inputs asserted; NaN cannot propagate | unit | same file (test_pid_signs) | ✅ | ✅ green |
+| 02-01-04 | 01 | 1 | BASE-02 | — | anti-windup guard present, guarded IAE_T strictly lower | unit | same file (test_pid_antiwindup_improves) | ✅ | ✅ green |
+| 02-01-05 | 01 | 1 | BASE-02 | — | I term live (P-only ablation shows large droop) | unit | same file (test_pid_integral_required) | ✅ | ✅ green |
+| 02-01-06 | 01 | 1 | BASE-03 | T-02-02 / — | setpoints as fn args; exact key set; fresh-state determinism | unit | same file (test_controller_signatures) | ✅ | ✅ green |
+| 02-01-07 | 01 | 2 | BASE-01/02/03 | — | 24h closed-loop runs assert/NaN-free; T-IAE < 60 °C·h; RH in [0,100] | integration | same file (test_closed_loop_24h) | ✅ | ✅ green |
+| 02-01-08 | 01 | 2 | BASE-01/02 | — | notebook executes headless, PNG written | manual-only | `jupyter nbconvert --execute notebooks/02_baselines.ipynb` + PNG exists | ✅ | ✅ green (nb-ok 4 cells, png-ok; executed via python-Agg, jupyter CLI absent) |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -74,11 +75,11 @@ created: "2026-09-21"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 10s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 10s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-21 — 8/8 rows green, no gaps (validate-phase audit)
