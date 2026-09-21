@@ -16,7 +16,7 @@
 **Plans:** 1 plan
 
 Plans:
-- [ ] 01-PLAN.md — coupled ODE greenhouse plant + seedable weather generator + plain-assert suite + proof-of-work notebook
+- [x] 01-PLAN.md — coupled ODE greenhouse plant + seedable weather generator + plain-assert suite + proof-of-work notebook (executed, verified 2026-09-21; CR-01 peak fix in db83e9b)
 
 ## Phase 2: Baseline Controllers
 **Goal:** On/off and PID controllers that track setpoints on the plant — the benchmarks to beat.
