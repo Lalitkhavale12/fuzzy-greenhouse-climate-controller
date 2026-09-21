@@ -19,8 +19,9 @@ def generate_weather_profile(out_path, seed=7, t_mean=20.0, t_amp=6.0,
     t_min = np.arange(0, int(duration_h*60) + 1, interval_min, dtype=int)  # 0..1440
     t_h   = t_min / 60.0
     phase = 2*np.pi*(t_h - t_peak_h)/24.0
-    T_out = t_mean + t_amp*np.sin(phase) + rng.normal(0, 0.5, t_h.size)     # mild noise
-    RH    = np.clip(rh_mean - rh_amp*np.sin(phase) + rng.normal(0, 3.0, t_h.size), 30, 95)  # D-11 anti-correlated
+    # cosine so the daily maximum lands exactly at t_peak_h (a sine would peak 6h late)
+    T_out = t_mean + t_amp*np.cos(phase) + rng.normal(0, 0.5, t_h.size)     # mild noise
+    RH    = np.clip(rh_mean - rh_amp*np.cos(phase) + rng.normal(0, 3.0, t_h.size), 30, 95)  # D-11 anti-correlated
     np.savetxt(out_path, np.column_stack([t_min, T_out, RH]),
                header="time_min,temp_C,rh_pct", comments="", fmt=["%d", "%.2f", "%.2f"])
     return out_path

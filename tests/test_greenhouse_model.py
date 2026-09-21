@@ -67,9 +67,12 @@ def test_bounded_finite_positive_24h():
     # w 11.00..21.17, RH 44..100. Bands below carry margin around those actuals —
     # the plan's literal [16.8, 35.8] floors the T at 16.8 which the probe (16.78)
     # already contradicts, so bounds are probe-faithful supersets.
-    assert T_lo >= 16.5 and T_hi <= 36.0
-    assert w_lo >= 10.9 and w_hi <= 38.5
-    assert rh_lo >= 43.0 and rh_hi <= 100.0
+    # Recalibrated 2026-09-21 after the CR-01 weather fix (peak now truly at
+    # 15:00, coinciding with afternoon solar): actuals T 13.79..42.12,
+    # w 9.82..19.94, RH 32.0..100.0 — physically plausible, bands carry margin.
+    assert T_lo >= 13.5 and T_hi <= 43.0
+    assert w_lo >= 9.5 and w_hi <= 21.0
+    assert rh_lo >= 31.0 and rh_hi <= 100.0
     assert np.isfinite(T) and np.isfinite(w) and np.isfinite(rh)
 
 
@@ -128,6 +131,15 @@ def test_generator_seedability():
     generate_weather_profile(p2, seed=7)
     with open(p1, "rb") as f1, open(p2, "rb") as f2:
         assert f1.read() == f2.read()                       # same seed -> byte-identical
+
+    # temperature peak must land at t_peak_h (default 15.0): smooth the mild
+    # noise with a ~3h rolling mean, then check the argmax hour (CR-01 guard)
+    rows = np.loadtxt(p1, skiprows=1)  # whitespace-delimited (savetxt default)
+    T = rows[:, 1]
+    win = 13
+    smooth = np.convolve(T, np.ones(win) / win, mode="same")
+    peak_h = (rows[np.argmax(smooth), 0]) / 60.0
+    assert abs((peak_h - 15.0 + 12.0) % 24.0 - 12.0) <= 2.0  # within +/-2h, circular
 
 
 def test_step_api_contract():
