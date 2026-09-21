@@ -22,6 +22,10 @@ def pid_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0, gains=GAIN
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)
     assert np.isfinite(dt) and dt > 0
     st = {'iT': 0.0, 'pT': None, 'iH': 0.0, 'pH': None} if state is None else state
+    for k in ('iT', 'pT', 'iH', 'pH'):  # WR-02: fail loud on partial state
+        assert k in st, f"state missing key {k!r}"
+    for k in ('Kp_T', 'Ki_T', 'Kd_T', 'Kp_H', 'Ki_H', 'Kd_H'):
+        assert k in gains, f"gains missing key {k!r}"
     eT, eH = T_sp - T_C, RH_sp - rh_pct
     dT = 0.0 if st['pT'] is None else (eT - st['pT']) / dt
     dH = 0.0 if st['pH'] is None else (eH - st['pH']) / dt
@@ -32,7 +36,8 @@ def pid_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0, gains=GAIN
         st['iT'] += eT * dt
     u = float(np.clip(gains['Kp_T'] * eT + gains['Ki_T'] * st['iT'] + gains['Kd_T'] * dT, -1.0, 1.0))
     v_raw = gains['Kp_H'] * eH + gains['Ki_H'] * st['iH']
-    if not (v_raw > 1.0 and eH > 0):
+    # freeze H integrator when saturated pushing further (both sides — WR-01)
+    if not ((v_raw > 1.0 and eH > 0) or (v_raw < 0.0 and eH < 0)):
         st['iH'] += eH * dt
     v = float(np.clip(gains['Kp_H'] * eH + gains['Ki_H'] * st['iH'], 0.0, 1.0))
     heat, cool = (u, 0.0) if u > 0 else (0.0, -u)   # split-range, never both

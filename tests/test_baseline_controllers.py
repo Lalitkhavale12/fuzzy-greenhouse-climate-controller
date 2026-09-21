@@ -125,6 +125,23 @@ def test_pid_antiwindup_improves():
     assert guarded < unguarded, (guarded, unguarded)
 
 
+def test_pid_humidity_recovery():
+    # WR-01: after a long humid stretch (fogger pinned at 0, eH < 0), the H
+    # integrator must not be wound up without bound — fogger must respond
+    # promptly once dry air returns.
+    from src.pid_controller import pid_step
+
+    st = None
+    for _ in range(400):                              # humid: v pinned at 0
+        _, st = pid_step(25.0, 100.0, 25.0, 70.0, st)
+    assert abs(st["iH"]) < 1e6, st["iH"]              # no unbounded windup
+    for i in range(60):                               # dry: fogger must wake
+        act, st = pid_step(25.0, 50.0, 25.0, 70.0, st)
+        if act["fogger"] > 0.0:
+            break
+    assert act["fogger"] > 0.0, f"fogger still 0 after {i + 1} dry steps"
+
+
 def test_pid_integral_required():
     import numpy as np
     from src.pid_controller import pid_step, GAINS

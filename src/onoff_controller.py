@@ -18,7 +18,10 @@ def onoff_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None,
     assert np.isfinite(T_C) and np.isfinite(rh_pct)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)
     assert np.isfinite(band_T) and np.isfinite(band_RH)
+    assert band_T > 0 and band_RH > 0, "hysteresis bands must be positive"  # WR-02
     st = {'heat': False, 'cool': False, 'fog': False} if state is None else state
+    for k in ('heat', 'cool', 'fog'):  # WR-02: fail loud on partial state
+        assert k in st, f"state missing latch key {k!r}"
     eT, eH = T_sp - T_C, RH_sp - rh_pct
     if eT > band_T:
         st['heat'] = True       # too cold -> full heat
