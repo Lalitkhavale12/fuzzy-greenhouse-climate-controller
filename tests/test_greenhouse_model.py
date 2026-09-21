@@ -179,7 +179,11 @@ def test_actuator_key_set():
 
 
 if __name__ == "__main__":
-    import sys
+    import sys, os
+    # "python tests/test_greenhouse_model.py" puts tests/ on sys.path, not the
+    # repo root — prepend the root so the in-body `from src import ...` works
+    # both standalone and under pytest (which adds rootdir itself).
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     failures = []
     for name, fn in sorted(globals().items()):
         if name.startswith("test_") and callable(fn):
