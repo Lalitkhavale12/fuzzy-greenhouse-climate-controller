@@ -1,15 +1,15 @@
 ---
 gsd_state_version: "1.0"
 status: executing
-stopped_at: Phase 02 planned — 1 plan verified, ready to execute
+stopped_at: Phase 02 complete — verified, ready for phase 3
 last_updated: "2026-09-21T13:01:38.604Z"
 state_head: a33756872dc674af7ee3b7eb58600c834c509b1a
 progress:
   total_phases: 7
-  completed_phases: 1
-  total_plans: 1
-  completed_plans: 1
-  percent: 14
+  completed_phases: 2
+  total_plans: 2
+  completed_plans: 2
+  percent: 29
 ---
 
 # Project State
@@ -20,7 +20,7 @@ See: .planning/PROJECT.md (updated 2026-09-20)
 
 **Core value:** The GA-optimized fuzzy controller must measurably beat both baselines (on/off and PID) on the weighted cost (temperature IAE + humidity IAE + energy) in simulation, reproduced end-to-end from the notebooks.
 
-**Current focus:** Phase 2 — Baseline Controllers (on/off + PID).
+**Current focus:** Phase 3 — Manual Fuzzy Controller (Mamdani, hand-tuned).
 
 ## Milestones
 
@@ -31,7 +31,7 @@ _None yet._
 | Phase | Status | Plans | Progress |
 |-------|--------|-------|----------|
 | 1 — Greenhouse Model & Weather | ✅ | 1/1 | 100% |
-| 2 — Baseline Controllers | ◐ | 1/1 | 0% |
+| 2 — Baseline Controllers | ✅ | 1/1 | 100% |
 | 3 — Manual Fuzzy Controller | ○ | 0/1 | 0% |
 | 4 — GA Optimization | ○ | 0/1 | 0% |
 | 5 — Metrics & Comparison | ○ | 0/1 | 0% |
@@ -41,5 +41,5 @@ _None yet._
 ## Session
 
 **Last session:** 2026-09-21T13:01:38.441Z
-**Stopped at:** Phase 02 planned — 1 plan verified, ready to execute
-**Resume file:** .planning/phases/02-baseline-controllers/02-PLAN.md
+**Stopped at:** Phase 02 complete — verified, ready for phase 3
+**Resume file:** .planning/phases/02-baseline-controllers/02-SUMMARY.md

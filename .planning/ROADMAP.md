@@ -28,6 +28,10 @@ Plans:
 4. Outputs are comparable actuator command structures (duty percentages) shared with later controllers
 
 **Requirements:** BASE-01, BASE-02, BASE-03
+**Plans:** 1 plan
+
+Plans:
+- [x] 02-PLAN.md — hysteresis on/off + dual-loop PID baselines, 8-check suite, closed-loop proof notebook (executed, verified 2026-09-21; WR-01/WR-02 review fixes in a795b7b)
 
 ## Phase 3: Manual Fuzzy Controller
 **Goal:** Hand-tuned Mamdani fuzzy controller controls the plant before any GA work.
