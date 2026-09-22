@@ -3,10 +3,11 @@ phase: "03"
 slug: "manual-fuzzy-controller"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-21"
+updated: "2026-09-21"
 ---
 
 # Phase 03 — Validation Strategy
@@ -41,15 +42,15 @@ created: "2026-09-21"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 03-01-01 | 01 | 1 | FUZZ-01 | T-03-01 / — | finite inputs asserted; NaN raises | unit | `python tests/test_fuzzy_controller.py` (test_fuzzy_signs) | ❌ W0 | ⬜ pending |
-| 03-01-02 | 01 | 1 | FUZZ-01 | — | error-rate path live (ramp vs flat differ) | unit | same file (test_error_rate_live) | ❌ W0 | ⬜ pending |
-| 03-01-03 | 01 | 1 | FUZZ-02 | — | tri shape + FUZZY_MFS keys + 50% overlap | unit | same file (test_membership_functions) | ❌ W0 | ⬜ pending |
-| 03-01-04 | 01 | 1 | FUZZ-03 | — | 5x5 cells in 0..4; RULES[2,2]==2; monotone column/row | unit | same file (test_rule_table) | ❌ W0 | ⬜ pending |
-| 03-01-05 | 01 | 1 | FUZZ-04 | T-03-02 / — | split-range exclusion; exact 4-key dict; vent==fan | unit+integration | same file (test_output_mapping) | ❌ W0 | ⬜ pending |
-| 03-01-06 | 01 | 1 | FUZZ-05 | — | centroid signs/magnitudes; determinism | unit | same file (test_centroid_defuzz) | ❌ W0 | ⬜ pending |
-| 03-01-07 | 01 | 1 | FUZZ-02/05 | — | accumulator freeze beats never-freeze on IAE | unit | same file (test_accumulator_antiwindup) | ❌ W0 | ⬜ pending |
-| 03-01-08 | 01 | 2 | FUZZ-06 | T-03-01/02 / — | 24h finite/bounded; T-IAE < 60; RH in [0,100]; < 12 crossings; setpoints live; determinism; NaN raises | integration | same file (test_closed_loop_24h) | ❌ W0 | ⬜ pending |
-| 03-01-09 | 01 | 2 | FUZZ-06 | — | notebook structural nb-ok + PNG > 10 KB | manual-only | nb-ok one-liner + size check | ❌ W0 | ⬜ pending |
+| 03-01-01 | 01 | 1 | FUZZ-01 | T-03-01 / — | finite inputs asserted; NaN raises | unit | `python tests/test_fuzzy_controller.py` (test_fuzzy_signs) | ✅ | ✅ green |
+| 03-01-02 | 01 | 1 | FUZZ-01 | — | error-rate path live (ramp vs flat differ) | unit | same file (test_error_rate_live) | ✅ | ✅ green |
+| 03-01-03 | 01 | 1 | FUZZ-02 | — | tri shape + FUZZY_MFS keys + 50% overlap | unit | same file (test_membership_functions) | ✅ | ✅ green |
+| 03-01-04 | 01 | 1 | FUZZ-03 | — | 5x5 cells in 0..4; RULES[2,2]==2; monotone column/row | unit | same file (test_rule_table) | ✅ | ✅ green |
+| 03-01-05 | 01 | 1 | FUZZ-04 | T-03-02 / — | split-range exclusion; exact 4-key dict; vent==fan | unit+integration | same file (test_output_mapping) | ✅ | ✅ green |
+| 03-01-06 | 01 | 1 | FUZZ-05 | — | centroid signs/magnitudes; determinism | unit | same file (test_centroid_defuzz) | ✅ | ✅ green |
+| 03-01-07 | 01 | 1 | FUZZ-02/05 | — | accumulator freeze beats never-freeze on IAE | unit | same file (test_accumulator_antiwindup) | ✅ | ✅ green |
+| 03-01-08 | 01 | 2 | FUZZ-06 | T-03-01/02 / — | 24h finite/bounded; T-IAE < 60; RH in [0,100]; < 12 crossings; setpoints live; determinism; NaN raises | integration | same file (test_closed_loop_24h) | ✅ | ✅ green |
+| 03-01-09 | 01 | 2 | FUZZ-06 | — | notebook structural nb-ok + PNG > 10 KB | manual-only | nb-ok one-liner + size check | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -75,11 +76,11 @@ created: "2026-09-21"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 15s
-- [ ] `nyquist_compliant: true` set in frontmatter
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 15s
+- [x] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-21 — 9/9 rows green, no gaps (validate-phase audit)
