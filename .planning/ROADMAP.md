@@ -43,6 +43,10 @@ Plans:
 4. Hand-tuned parameters control the plant to setpoint — `fuzzy_controller.py` proves it works before GA
 
 **Requirements:** FUZZ-01, FUZZ-02, FUZZ-03, FUZZ-04, FUZZ-05, FUZZ-06
+**Plans:** 1 plan
+
+Plans:
+- [x] 03-PLAN.md — velocity-form dual-loop Mamdani fuzzy, 9-check suite, closed-loop proof notebook (executed, verified 2026-09-22; WR-01 RH-grid review fix in 9aa65dc)
 
 ## Phase 4: GA Optimization
 **Goal:** GA tunes fuzzy membership functions so the GA fuzzy controller beats both baselines.
