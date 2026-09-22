@@ -129,7 +129,26 @@ def test_centroid_defuzz():
     assert du(-5.0, 0.0) < -0.05, du(-5.0, 0.0)  # strong cool when far hot
     assert abs(du(0.0, 0.0)) < 1e-9             # equilibrium holds
     assert du(2.0, 0.0) == du(2.0, 0.0)         # bit-identical reruns
-    assert du(2.0, 0.0) == du(2.0, 0.0) and du(-3.0, 0.25) == du(-3.0, 0.25)
+    assert du(-3.0, 0.25) == du(-3.0, 0.25)     # (IN-02: no duplicated line)
+
+
+def test_fogger_ramps_down():
+    # WR-01: dv must go negative on soak so the fogger can ramp DOWN, and the
+    # equilibrium dv must be exactly 0.0 (full ZO triangle) — not a ratchet.
+    from src.fuzzy_controller import fuzzy_step
+
+    st = None
+    for _ in range(30):
+        act, st = fuzzy_step(25.0, 50.0, 25.0, 70.0, st)   # dry: charge fogger
+    high = act["fogger"]
+    assert high > 0.0, act
+    for _ in range(60):
+        act, st = fuzzy_step(25.0, 95.0, 25.0, 70.0, st)   # soaked: dry back
+    assert act["fogger"] < high, (high, act)
+    st = None
+    for _ in range(120):
+        act, st = fuzzy_step(25.0, 70.0, 25.0, 70.0, st)   # equilibrium: hold
+    assert act["fogger"] < 0.05, act
 
 
 def _fuzzy_unguarded(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0):

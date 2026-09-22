@@ -77,7 +77,7 @@ def fuzzy_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0, mfs=FUZZ
                mfs["du"]["centers"], mfs["du"]["widths"], -1.0, 1.0)
     dv = infer(eH, dH, mfs["eH"]["centers"], mfs["eH"]["widths"],
                mfs["deH"]["centers"], mfs["deH"]["widths"],
-               mfs["dv"]["centers"], mfs["dv"]["widths"], 0.0, 1.0)
+               mfs["dv"]["centers"], mfs["dv"]["widths"], -1.0, 1.0)  # WR-01: full grid so dv can go negative (accumulation still clipped to [0,1] below)
     u_new = st['uT'] + du
     if not ((u_new > 1.0 and eT > 0) or (u_new < -1.0 and eT < 0)):  # AW freeze (PID convention)
         st['uT'] = float(np.clip(u_new, -1.0, 1.0))
