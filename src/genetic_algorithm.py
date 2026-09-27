@@ -18,7 +18,6 @@ NumPy + stdlib json only. Run:  python src/genetic_algorithm.py
 
 import json
 import os
-import sys
 
 import numpy as np
 
@@ -157,6 +156,8 @@ def coupled_fuzzy_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None,
 
     The decoupled velocity loops (fuzzy_step) are untouched; state handling
     is theirs. gains=None means zeros (bit-identical to fuzzy_step).
+    mfs defaults to the FUZZY_MFS global: never mutate it in place, pass
+    decode() fresh copies instead (IN-06).
     """
     g = {"k_heat": 0.0, "k_vent": 0.0} if gains is None else gains
     act, st = fuzzy_step(T_C, rh_pct, T_sp, RH_sp, state, dt, mfs)
@@ -218,7 +219,7 @@ def blx_alpha(p1, p2, rng, alpha=0.5):
     return rng.uniform(lo, hi)
 
 
-def gaussian_mutate(child, rng, p_gene=1.0 / 60.0, sigmas=SIGMAS):
+def gaussian_mutate(child, rng, p_gene=1.0 / CHROM_LEN, sigmas=SIGMAS):
     """Per-gene gaussian mutation, sigma 0.1 * gene range."""
     mask = rng.random(child.size) < p_gene
     child[mask] += rng.normal(0.0, 1.0, int(mask.sum())) * sigmas[mask]
@@ -228,15 +229,17 @@ def gaussian_mutate(child, rng, p_gene=1.0 / 60.0, sigmas=SIGMAS):
 def init_population(rng, n):
     """Individual 0 = exact hand encoding + ZERO gains (hand-equivalent).
 
-    Rest = hand * (1 + U(-0.2, 0.2)) on MF genes (mechanical as before);
-    gains drawn U(lo, hi) so the population explores coupling from gen 0
-    (hand-scaled jitter would pin every gain at exactly 0.0).
+    Rest = additive jitter around hand values (WR-01: multiplicative jitter
+    would pin the six exact-0.0 ZO centers forever); gains drawn U(lo, hi) so
+    the population explores coupling from gen 0 (hand-scaled jitter would pin
+    every gain at exactly 0.0).
     """
     hand = encode(FUZZY_MFS)
     pop = np.empty((n, CHROM_LEN))
     pop[0] = hand
     for i in range(1, n):
-        pop[i, :60] = hand[:60] * (1.0 + rng.uniform(-0.2, 0.2, 60))
+        scale = np.where(np.abs(hand[:60]) < 1e-12, 1.0, hand[:60])
+        pop[i, :60] = hand[:60] + scale * rng.uniform(-0.2, 0.2, 60)
         for j, k in enumerate(COUPLING_KEYS):
             lo, hi = COUPLING_BOUNDS[k]
             pop[i, 60 + j] = rng.uniform(lo, hi)
@@ -271,7 +274,14 @@ def _gains_to_lists(gains):
 def run_ga(population=50, generations=50, rng_seed=0,
            train_weather="weather/weather_profile.csv", train_seed=7,
            holdout_seed=21, out_path="results/ga_optimized_params.json"):
-    """Seeded elitism-2 generational GA; flushes best-so-far JSON every gen."""
+    """Seeded elitism-2 generational GA; flushes best-so-far JSON every gen.
+
+    train_seed/holdout_seed are provenance labels recorded in the JSON, NOT
+    functional parameters: weather comes solely from the train_weather CSV
+    file (generate it externally at the desired seed), evolution solely
+    from rng_seed.
+    """
+    assert population >= 1 and generations >= 0  # IN-08: fail loud on CLI 0
     rng = np.random.default_rng(rng_seed)  # single RNG: every draw via rng
     t_min, T_out, w_out = load_weather_profile(train_weather)
     hours = np.arange(0, N_STEPS) / 60.0
@@ -288,7 +298,8 @@ def run_ga(population=50, generations=50, rng_seed=0,
 
     for _ in range(generations):
         hist_best.append(float(best_fit))
-        hist_mean.append(float(np.mean(fit[np.isfinite(fit)])))
+        hist_mean.append(float(np.mean(fit[np.isfinite(fit)])
+                              if np.any(np.isfinite(fit)) else float("inf")))
         _bm, _bg = decode(best_chrom)
         _write_json(out_path, _mfs_to_lists(_bm), _gains_to_lists(_bg),
                     best_fit, {"w1": W1, "w2": W2, "w3": W3}, train_weather,
@@ -315,7 +326,8 @@ def run_ga(population=50, generations=50, rng_seed=0,
             best_chrom = pop[order[0]].copy()
 
     hist_best.append(float(best_fit))
-    hist_mean.append(float(np.mean(fit[np.isfinite(fit)])))
+    hist_mean.append(float(np.mean(fit[np.isfinite(fit)])
+                           if np.any(np.isfinite(fit)) else float("inf")))
     # keep history length == generations (drop the pre-gen-0 entry)
     hist_best, hist_mean = hist_best[1:], hist_mean[1:]
     _bm, _bg = decode(best_chrom)
@@ -337,7 +349,6 @@ if __name__ == "__main__":
     ap.add_argument("--train-weather", default="weather/weather_profile.csv")
     ap.add_argument("--out", default="results/ga_optimized_params.json")
     a = ap.parse_args()
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     res = run_ga(population=a.population, generations=a.generations,
                  rng_seed=a.seed, train_weather=a.train_weather,
                  out_path=a.out)

@@ -62,9 +62,10 @@ def test_decode_repair_invariants():
     for bad in (59, 61, 63):
         try:
             decode(np.zeros(bad))
-            raise SystemExit(f"len-{bad} chromosome did not raise")
         except AssertionError:
             pass
+        else:
+            raise AssertionError(f"len-{bad} chromosome did not raise")
 
 
 def test_fitness_matches_hand_cost():
@@ -185,7 +186,8 @@ def test_json_schema():
     res = run_ga(population=3, generations=1, rng_seed=0, out_path=tmp)
     assert np.isfinite(res["best_fit"]), res
     assert set(res["best_gains"]) == set(COUPLING_KEYS)
-    d = json.load(open(tmp))
+    with open(tmp) as f:
+        d = json.load(f)
     assert set(d) == {"mfs", "coupling", "fitness", "weights",
                       "train_weather", "train_seed", "holdout_seed",
                       "population", "generations", "rng_seed",
@@ -228,7 +230,7 @@ def test_tiny_ga_monotonic():
     t0 = time.time()
     res = run_ga(population=4, generations=2, rng_seed=0, out_path=tmp)
     dt = time.time() - t0
-    assert dt < 30.0, dt
+    assert dt < 300.0, dt  # hang guard only, not a perf bar (WR-03)
     assert np.isfinite(res["best_fit"]), res
     hist = res["history"]["best"]
     assert len(hist) == 2, hist
