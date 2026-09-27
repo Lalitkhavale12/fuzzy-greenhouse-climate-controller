@@ -130,8 +130,9 @@ def run_closed_loop(controller_step, weather_path, n=1440,
     weather_path is REQUIRED (no default): both table blocks must score
     their own frozen file, never a hardcoded default (wrong-file guard).
     """
-    assert isinstance(weather_path, str) and weather_path, \
+    assert isinstance(weather_path, (str, os.PathLike)) and str(weather_path), \
         "weather_path required"
+    weather_path = os.fspath(weather_path)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)
     t_min, T_out, w_out = load_weather_profile(weather_path)
     hours = np.arange(0, n) / 60.0
@@ -188,8 +189,7 @@ def compare(out_path="results/comparison.csv"):
             r["rank"] = i
         rows.extend(block)
     d = os.path.dirname(os.path.abspath(out_path))
-    if d:
-        os.makedirs(d, exist_ok=True)
+    os.makedirs(d, exist_ok=True)
     with open(out_path, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=COLUMNS)
         writer.writeheader()
