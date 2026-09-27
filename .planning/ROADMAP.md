@@ -59,6 +59,10 @@ Plans:
 5. `ga_fuzzy_controller.py` loads those params and produces lower weighted-cost than baselines in a holdout run
 
 **Requirements:** GA-01, GA-02, GA-03, GA-04, GA-05
+**Plans:** 1 plan
+
+Plans:
+- [x] 04-PLAN.md — 62-D cross-coupled GA (tournament/BLX/gaussian/elitism-2), run-3 JSON, holdout GA 114.28 beats both baselines (executed, verified 2026-09-27; D-06/A2 cross-coupling after run-1/run-2 decoupled block)
 
 ## Phase 5: Metrics & Comparison
 **Goal:** Quantified scoreboard across all four controllers.
