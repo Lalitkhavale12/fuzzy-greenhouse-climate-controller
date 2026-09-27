@@ -34,13 +34,15 @@ ORDER = ["eT", "deT", "du", "eH", "deH", "dv"]
 
 # (center_lo, center_hi, w_min > 0, w_max) per variable; centers padded ~50%
 # beyond the hand spans, widths bounded away from zero (tri() divides by w).
+# D-04a (2026-09-27): du/dv centers span the full [-1,1] defuzz grid so the
+# GA can reach bang-bang authority; inputs and widths unchanged.
 BOUNDS = {
     "eT": (-6.0, 6.0, 0.2, 6.0),
     "deT": (-0.75, 0.75, 0.025, 0.75),
-    "du": (-0.15, 0.15, 0.005, 0.15),
+    "du": (-1.0, 1.0, 0.005, 0.15),
     "eH": (-40.0, 40.0, 1.5, 40.0),
     "deH": (-9.0, 9.0, 0.3, 9.0),
-    "dv": (-0.15, 0.15, 0.005, 0.15),
+    "dv": (-1.0, 1.0, 0.005, 0.15),
 }
 
 W1, W2, W3 = 1.0, 1.0, 0.01  # D-01 locked fitness weights

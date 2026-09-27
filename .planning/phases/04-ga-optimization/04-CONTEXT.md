@@ -26,6 +26,7 @@ Requirements: GA-01, GA-02, GA-03, GA-04, GA-05.
 
 ### Chromosome Scope
 - **D-04:** Full MF set: every center + width in `FUZZY_MFS`, both loops (T and RH) — largest search space, most tuning power for the 50×50 budget. Rule table and engine stay fixed (textbook table, velocity form — GA tunes shapes only, not structure).
+- **D-04a (amendment 2026-09-27, user-approved after blocked 50×50 run 1):** output-MF center bounds widened to the full [-1.0, 1.0] defuzz grid for `du` and `dv` only — the locked ±0.1 output universe capped fogger authority at 0.1/step, structurally unable to match bang-bang recovery on humidity-dominated fitness. Input universes (eT/deT/eH/deH), width bounds, rule table, and engine unchanged; hand chromosome remains a valid interior point and individual 0. — **Reversibility:** costly — same trace-dependency rationale as D-01; run-1 JSON is superseded, not comparable.
 
 ### Proof Shape
 - **D-05:** Proof is `notebooks/04_ga_optimization.ipynb` + PNG, same pattern as Phases 1–3 (Agg headless, imports from `src/` only, no duplicated logic): convergence curve + holdout comparison traces (+ MF before/after plots, recommended). Feeds the Phase-6 notebook trail.
