@@ -73,6 +73,10 @@ Plans:
 3. Table is machine-readable (CSV/DataFrame) for notebook/dashboard reuse
 
 **Requirements:** METR-01, METR-02
+**Plans:** 1 plan
+
+Plans:
+- [x] 05-PLAN.md — metrics.py six kernels + compare() scoreboard (8x14 CSV, GA rank 1 both weathers), 9-check suite (executed, verified 2026-09-27)
 
 ## Phase 6: Milestone Notebooks
 **Goal:** Six notebooks document each milestone with plots — the proof-of-work trail.
