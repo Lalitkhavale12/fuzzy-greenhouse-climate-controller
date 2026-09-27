@@ -19,3 +19,47 @@ Holdout seed-21 breakdown (shared fresh weather, all four controllers):
   ga     IAE_T 6.76  IAE_H 628.01  E 9.68   cost 634.87
 Verdict: GA < PID True (634.87 < 645.26); GA < on/off FALSE (634.87 > 513.75).
 GA-05 bar NOT met on the on/off leg — see 04-SUMMARY.md blocker.
+
+Run 2 (2026-09-27, Amendment A1 / D-04a: du/dv center bounds widened to [-1.0, 1.0]):
+Command: python src/genetic_algorithm.py (defaults: population 50, generations 50, seed 0)
+Train weather: weather/weather_profile.csv (immutable input, never regenerated), train_seed 7
+Train result: best 641.54 (gen 0, hand) -> 632.86 (gen 49), monotone (elitism-2).
+History best[0,5,10,20,30,40,49] = 641.54 639.67 638.03 635.71 634.36 633.77 632.86.
+History mean[0,5,10,20,30,40,49] = 648.53 654.06 644.90 637.26 640.46 643.95 642.72.
+Improving generations: 30/50. Run-1 JSON at this path SUPERSEDED (not comparable — bounds changed).
+
+Holdout seed-21 breakdown (shared fresh weather, all four controllers):
+  onoff  IAE_T 7.40  IAE_H 506.21  E 13.75  cost 513.75
+  pid    IAE_T 1.07  IAE_H 644.10  E 9.66   cost 645.26
+  hand   IAE_T 2.68  IAE_H 641.25  E 9.48   cost 644.03
+  ga     IAE_T 7.99  IAE_H 627.29  E 9.75   cost 635.37
+Verdict: GA < PID True (635.37 < 645.26); GA < on/off FALSE (635.37 > 513.75).
+GA-05 bar STILL NOT met on the on/off leg — widened output authority moved GA
+only 634.87 -> 635.37 (noise); humidity gap to on/off (~121 pts) is structural.
+STOPPED — no further fix invented; needs the user again.
+
+Run 3 (2026-09-27, Amendment A2 / D-06: cross-coupled GA fuzzy ONLY):
+Command: python src/genetic_algorithm.py --population 50 --generations 50 --seed 0
+Code: commit f945e1b (62-D: 60 MF genes + k_heat/k_vent in [0, 0.05] duty per pctRH
+  excess; coupled path = untouched fuzzy_step then heater/vent boost, clipped).
+  Individual 0 = hand MFs + zero gains (hand-equivalent 641.54, never-worse).
+  JSON schema v2: adds "coupling" {k_heat, k_vent} + "schema_version" 2
+  (Phase 5/7 consumers must read "coupling"; v1 JSONs load with zero gains).
+Train weather: weather/weather_profile.csv (immutable input, never regenerated), train_seed 7
+Train result: best 109.54 (gen 0, random coupled) -> 107.14 (gen 49), monotone (elitism-2).
+  (Individual 0 stayed 641.54; random-gain individuals beat it immediately —
+  the coupling, not MF retuning, carries the win.)
+History best[0,5,10,20,30,40,49] = 109.54 107.99 107.65 107.46 107.17 107.15 107.14.
+History mean[0,5,10,20,30,40,49] = 170.73 114.70 125.95 126.01 108.45 110.63 108.88.
+Improving generations: 19/50. Runs 1-2 JSONs at this path SUPERSEDED (not comparable —
+  decoupled structure could not express dehumidification; see wet/dry-split probe).
+Elite coupling: k_heat 0.05, k_vent 0.05 (both at upper bound — max useful authority).
+
+Holdout seed-21 breakdown (shared FRESH weather, all four controllers):
+  onoff  IAE_T 7.40  IAE_H 506.21  E 13.75  cost 513.75
+  pid    IAE_T 1.07  IAE_H 644.10  E 9.66   cost 645.26
+  hand   IAE_T 2.68  IAE_H 641.25  E 9.48   cost 644.03
+  ga     IAE_T 1.66  IAE_H 112.44  E 18.13  cost 114.28
+Verdict: GA < PID True (114.28 < 645.26); GA < on/off TRUE (114.28 < 513.75).
+GA-05 bar MET on both legs. Comparison framed as intelligent-coupled (GA fuzzy)
+vs classical-decoupled (on/off, PID, hand fuzzy — sealed, untouched).
