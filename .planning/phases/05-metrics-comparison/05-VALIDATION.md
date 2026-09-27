@@ -3,10 +3,11 @@ phase: "05"
 slug: "metrics-comparison"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-27"
+updated: "2026-09-27"
 ---
 
 # Phase 05 — Validation Strategy
@@ -41,14 +42,14 @@ created: "2026-09-27"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 05-01-01 | 01 | 1 | METR-01 | T-05-01 / — | kernels raise AssertionError on non-finite input | unit | `python tests/test_metrics.py` (test_metric_kernels_synthetic) | ❌ W0 | ⬜ pending |
-| 05-01-02 | 01 | 1 | METR-01 | — | settling joint-band last-exit + inf never-settled + settled-at-0 | unit | same file (test_settling_edges) | ❌ W0 | ⬜ pending |
-| 05-01-03 | 01 | 1 | METR-01 | — | energy bit-identical (==) to closed_loop_breakdown | unit | same file (test_energy_identity) | ❌ W0 | ⬜ pending |
-| 05-01-04 | 01 | 1 | METR-01 | — | overshoot absolute peak beyond setpoint per channel | unit | same file (test_overshoot) | ❌ W0 | ⬜ pending |
-| 05-01-05 | 01 | 2 | METR-02 | — | compare() 8 rows, frozen columns, finite (except inf settling) | integration | same file (test_compare_shape) | ❌ W0 | ⬜ pending |
-| 05-01-06 | 01 | 2 | METR-02 | — | holdout GA < on/off AND < PID (strict ordering, no exact values) | integration | same file (test_holdout_ordering) | ❌ W0 | ⬜ pending |
-| 05-01-07 | 01 | 2 | METR-02 | T-05-02 / — | CSV header == COLUMNS, round-trips to returned rows | integration | same file (test_csv_roundtrip) | ❌ W0 | ⬜ pending |
-| 05-01-08 | 01 | 2 | METR-02 | — | train vs holdout blocks differ (wrong-file guard) | integration | same file (test_weathers_distinct) | ❌ W0 | ⬜ pending |
+| 05-01-01 | 01 | 1 | METR-01 | T-05-01 / — | kernels raise AssertionError on non-finite input | unit | `python tests/test_metrics.py` (test_metric_kernels_synthetic) | ✅ | ✅ green |
+| 05-01-02 | 01 | 1 | METR-01 | — | settling joint-band last-exit + inf never-settled + settled-at-0 | unit | same file (test_settling_edges) | ✅ | ✅ green |
+| 05-01-03 | 01 | 1 | METR-01 | — | energy bit-identical (==) to closed_loop_breakdown | unit | same file (test_energy_identity) | ✅ | ✅ green |
+| 05-01-04 | 01 | 1 | METR-01 | — | overshoot absolute peak beyond setpoint per channel | unit | same file (test_overshoot) | ✅ | ✅ green |
+| 05-01-05 | 01 | 2 | METR-02 | — | compare() 8 rows, frozen columns, finite (except inf settling) | integration | same file (test_compare_shape) | ✅ | ✅ green |
+| 05-01-06 | 01 | 2 | METR-02 | — | holdout GA < on/off AND < PID (strict ordering, no exact values) | integration | same file (test_holdout_ordering) | ✅ | ✅ green |
+| 05-01-07 | 01 | 2 | METR-02 | T-05-02 / — | CSV header == COLUMNS, round-trips to returned rows | integration | same file (test_csv_roundtrip) | ✅ | ✅ green |
+| 05-01-08 | 01 | 2 | METR-02 | — | train vs holdout blocks differ (wrong-file guard) | integration | same file (test_weathers_distinct) | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -73,11 +74,11 @@ None — all phase behaviors have automated verification. (No Phase-5 notebook p
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-27 — 8/8 rows green + holdout ordering GA 114.28 < on/off 513.75 < PID 645.26 (validate-phase audit)
