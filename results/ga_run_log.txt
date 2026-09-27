@@ -1,0 +1,21 @@
+GA 50x50 evolution run log (Phase 4, GA-04/GA-05 proof input)
+Command: python src/genetic_algorithm.py --population 50 --generations 50 --seed 0
+Budget: population 50, generations 50 (~2500 evals), rng_seed 0
+Train weather: weather/weather_profile.csv (immutable input, never regenerated), train_seed 7
+Holdout: fresh seed-21 weather via generate_weather_profile(tmp seed-21 path),
+  never passed to fitness. holdout_seed 21 LOCKED (costly-reversible).
+
+Locked energy definition (Phase 5 metrics.py must use the identical definition):
+  E = sum over steps of (sum over actuators of duty) / 60  [duty-hours]
+Locked fitness: cost = 1.0*IAE_T + 1.0*IAE_H + 0.01*E (weights w1=1.0 w2=1.0 w3=0.01)
+
+Train result: best 641.54 (gen 0, hand) -> 632.57 (gen 49), monotone (elitism-2).
+History best[0,5,10,20,30,40,49] = 641.54 638.61 637.78 634.62 633.07 632.67 632.57.
+
+Holdout seed-21 breakdown (shared fresh weather, all four controllers):
+  onoff  IAE_T 7.40  IAE_H 506.21  E 13.75  cost 513.75
+  pid    IAE_T 1.07  IAE_H 644.10  E 9.66   cost 645.26
+  hand   IAE_T 2.68  IAE_H 641.25  E 9.48   cost 644.03
+  ga     IAE_T 6.76  IAE_H 628.01  E 9.68   cost 634.87
+Verdict: GA < PID True (634.87 < 645.26); GA < on/off FALSE (634.87 > 513.75).
+GA-05 bar NOT met on the on/off leg — see 04-SUMMARY.md blocker.
