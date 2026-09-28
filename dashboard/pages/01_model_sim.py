@@ -22,6 +22,8 @@ import streamlit as st
 from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
 from src.weather_profile_generator import generate_weather_profile
 
+T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
+
 
 @st.cache_data
 def cached_weather(seed):
@@ -41,7 +43,7 @@ def run_open_loop(heater, fan, fogger, vent, seed):
     T_out_hr = np.interp(hours, t_min, T_out)
     w_out_hr = np.interp(hours, t_min, w_out)
     act = {"heater": heater, "fan_cooler": fan, "fogger": fogger, "vent": vent}
-    T, w = 29.28, 20.0  # initial condition (probe-verified baseline)
+    T, w = T_INIT_C, W_INIT  # probe-verified baseline initial condition
     T_trace, w_trace, rh_trace = [], [], []
     for i, h in enumerate(hours):
         ws = (T_out_hr[i], w_out_hr[i], daytime_solar(h, params["A_sol"]))

@@ -24,6 +24,9 @@ def _read(rel):
 
 
 def _stub_streamlit():
+    # Deliberately no teardown: this repo has no pytest, so the standalone
+    # runner is the only consumer; pages bind the stub at import and need it
+    # for the whole session. Revisit if pytest is ever introduced.
     import sys as _sys
     import types as _types
 
@@ -104,8 +107,8 @@ def test_page_set():
 
 def test_pages_import():
     for fname in EXPECTED_PAGES:
-        if not os.path.exists(os.path.join(PAGES_DIR, fname)):
-            continue  # wave-1 files land in the expansion task
+        assert os.path.exists(os.path.join(PAGES_DIR, fname)), \
+            "missing page file: %s" % fname
         _import_page(fname)
         print(f"import-ok {fname}")
 

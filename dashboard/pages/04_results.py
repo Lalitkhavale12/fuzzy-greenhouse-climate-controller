@@ -29,8 +29,13 @@ WEATHERS = ["train-seed7", "holdout-seed21"]
 
 def load_scoreboard(path=CSV_PATH):
     """Load the frozen scoreboard with fail-closed provenance asserts."""
-    with open(path) as f:
-        rows = list(csv.DictReader(f))
+    try:
+        with open(path) as f:
+            rows = list(csv.DictReader(f))
+    except OSError as exc:
+        raise ValueError("frozen scoreboard unreadable: %s" % exc)
+    if not rows:
+        raise ValueError("scoreboard CSV is empty")
     assert list(rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
     assert len(rows) == 8, "expected 4 controllers x 2 weathers"
     return rows
@@ -44,7 +49,11 @@ def holdout_ranking(rows):
 
 st.title("Results — frozen scoreboard + verdict")
 
-rows = load_scoreboard()
+try:
+    rows = load_scoreboard()
+except (OSError, ValueError, AssertionError, KeyError) as exc:
+    st.error("Frozen scoreboard unreadable: %s" % exc)
+    st.stop()
 ranked = holdout_ranking(rows)
 
 st.subheader("Scoreboard (results/comparison.csv, 8 rows)")
@@ -56,8 +65,13 @@ for r in ranked:
               "cost %.2f" % float(r["cost"]),
               "rank #%s" % r["rank"])
 winner = ranked[0]["controller"]
-st.success("Verdict: %s ranks #1 on holdout — GA < on/off AND GA < PID holds"
-           % DISPLAY[winner])
+cost = {r["controller"]: float(r["cost"]) for r in ranked}
+beats = cost["ga_fuzzy"] < cost["onoff"] and cost["ga_fuzzy"] < cost["pid"]
+st.success("Verdict: %s ranks #1 on holdout" % DISPLAY[winner])
+if beats:
+    st.success("GA < on/off AND GA < PID holds")
+else:
+    st.warning("GA-beats-baselines claim does NOT hold in this artifact")
 
 val = {(r["controller"], r["weather"], m): float(r[m])
        for r in rows for m in ("iae_T", "iae_H", "energy", "cost")}

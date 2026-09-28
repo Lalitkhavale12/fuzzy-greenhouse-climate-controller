@@ -27,10 +27,16 @@ JSON_PATH = "results/ga_optimized_params.json"
 
 st.title("GA Explorer — frozen tuned artifact")
 
-mfs_opt, gains_opt = load_optimized_mfs(JSON_PATH)
-with open(JSON_PATH) as _f:
-    d = json.load(_f)
-assert d["schema_version"] == 2, "stale artifact: schema_version != 2"
+try:
+    mfs_opt, gains_opt = load_optimized_mfs(JSON_PATH)
+    with open(JSON_PATH) as _f:
+        d = json.load(_f)
+except (OSError, ValueError, AssertionError, KeyError) as exc:
+    st.error("Frozen GA artifact unreadable: %s" % exc)
+    st.stop()
+if not (d.get("schema_version") == 2):
+    st.error("stale artifact: schema_version != 2")
+    st.stop()
 best = d["history"]["best"]
 mean = d["history"]["mean"]
 
@@ -49,7 +55,8 @@ ax.plot(gens, best, label="best")
 ax.plot(gens, mean, label="mean", alpha=0.7)
 ax.set_xlabel("generation")
 ax.set_ylabel("train weighted cost")
-ax.set_title("GA convergence (50x50, train seed-7)")
+ax.set_title("GA convergence (%dx%d, train seed-%d)"
+              % (d["population"], d["generations"], d["train_seed"]))
 ax.legend()
 ax.grid(alpha=0.3)
 fig.tight_layout()
