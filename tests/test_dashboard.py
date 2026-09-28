@@ -123,6 +123,55 @@ def test_results_helper():
     print("results helper: 8 rows, COLUMNS header, GA rank 1 on holdout")
 
 
+def test_controllers_helper():
+    import time
+    mod = _import_page("02_controllers.py")
+    assert mod.resolve_weather(7) == "weather/weather_profile.csv"
+    assert mod.resolve_weather(21) == "weather/holdout_21.csv"
+    custom = mod.resolve_weather(33)
+    assert "weather/" not in custom.replace("\\", "/"), custom
+    t0 = time.time()
+    hours, runs = mod.run_all_four(25.0, 70.0, 21)
+    dt = time.time() - t0
+    assert set(runs) == {"on/off", "PID", "hand fuzzy", "GA fuzzy"}, set(runs)
+    for name, (T_h, RH_h, U_h) in runs.items():
+        assert len(T_h) == 1440 and len(RH_h) == 1440 and len(U_h) == 1440, \
+            (name, len(T_h))
+    assert dt < 30.0, dt
+    from src.metrics import all_metrics
+    costs = {n: all_metrics(T, RH, U)["cost"] for n, (T, RH, U) in runs.items()}
+    assert costs["GA fuzzy"] < costs["on/off"], costs
+    assert costs["GA fuzzy"] < costs["PID"], costs
+    print("controllers helper: 4 x 1440 on shared weather in %.2fs, GA wins" % dt)
+
+
+def test_source_audits():
+    import re
+    pages = {}
+    for fname in os.listdir(PAGES_DIR):
+        if fname.endswith(".py"):
+            with open(os.path.join(PAGES_DIR, fname)) as f:
+                pages[fname] = f.read()
+    assert pages, "no pages found"
+    for fname, src in pages.items():
+        assert 'use("Agg")' not in src and "use('Agg')" not in src, (fname, "Agg")
+        assert "plt.show" not in src, (fname, "show")
+        assert "savefig" not in src, (fname, "savefig")
+        for bad in ("/home/", "/Users/", "C:/", "C:\\"):
+            assert bad not in src, (fname, bad)
+        for line in src.splitlines():
+            if "generate_weather_profile(" in line:
+                assert "weather/" not in line.replace("\\", "/"), (fname, line)
+    src02 = pages.get("02_controllers.py", "")
+    assert "compare(" not in src02, "Controllers page must never call compare()"
+    assert "number_input" not in src02 and "text_input" not in src02, \
+        "sliders only drive the loop"
+    ga_refs = [l for l in src02.splitlines()
+               if "genetic_algorithm" in l or re.search(r"\bevolve\b", l)]
+    assert not ga_refs, ("02 page evolution refs", ga_refs)
+    print("source audits: no Agg/show/savefig, no abs paths, no recompute")
+
+
 def test_artifacts_untouched():
     import subprocess
     out = subprocess.run(["git", "status", "--porcelain", "results/", "weather/"],
