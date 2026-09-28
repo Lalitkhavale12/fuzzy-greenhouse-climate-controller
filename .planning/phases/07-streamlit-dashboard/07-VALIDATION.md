@@ -3,10 +3,11 @@ phase: "07"
 slug: "streamlit-dashboard"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-28"
+updated: "2026-09-28"
 ---
 
 # Phase 07 — Validation Strategy
@@ -41,13 +42,13 @@ created: "2026-09-28"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 07-01-01 | 01 | 1 | PROOF-02 | — | 4 pages present, numbered order, app.py landing-only | structural | `python tests/test_dashboard.py` (test_page_set) | ❌ W0 | ⬜ pending |
-| 07-01-02 | 01 | 1 | PROOF-02 | — | every page imports under stubbed streamlit (no browser) | unit | same file (test_pages_import) | ❌ W0 | ⬜ pending |
-| 07-01-03 | 01 | 1 | PROOF-02 | T-07-01 / — | run_all_four: shared weather, GA < on/off AND < PID on seed-21, wall < 30 s | unit | same file (test_controllers_helper) | ❌ W0 | ⬜ pending |
-| 07-01-04 | 01 | 1 | PROOF-02 | — | results helper: 8 rows, header == COLUMNS, rank follows CSV | unit | same file (test_results_helper) | ❌ W0 | ⬜ pending |
-| 07-01-05 | 01 | 1 | PROOF-02 | — | explorer helper: schema v2, 6 MF groups len-5, history.best len 50 | unit | same file (test_explorer_helper) | ❌ W0 | ⬜ pending |
-| 07-01-06 | 01 | 1 | PROOF-02 | T-07-02 / — | no writes to results/ or weather/ during helper runs | unit | same file (test_artifacts_untouched) | ❌ W0 | ⬜ pending |
-| 07-01-07 | 01 | 1 | PROOF-02 | — | static audits: no Agg/show/savefig under dashboard/, no absolute paths, no pandas/evolution imports on Results page | grep audit | same file (static checks) | ❌ W0 | ⬜ pending |
+| 07-01-01 | 01 | 1 | PROOF-02 | — | 4 pages present, numbered order, app.py landing-only | structural | `python tests/test_dashboard.py` (test_page_set) | ✅ | ✅ green |
+| 07-01-02 | 01 | 1 | PROOF-02 | — | every page imports under stubbed streamlit (no browser) | unit | same file (test_pages_import) | ✅ | ✅ green |
+| 07-01-03 | 01 | 1 | PROOF-02 | T-07-01 / — | run_all_four: shared weather, GA < on/off AND < PID on seed-21, wall < 30 s | unit | same file (test_controllers_helper) | ✅ | ✅ green |
+| 07-01-04 | 01 | 1 | PROOF-02 | — | results helper: 8 rows, header == COLUMNS, rank follows CSV | unit | same file (test_results_helper) | ✅ | ✅ green |
+| 07-01-05 | 01 | 1 | PROOF-02 | — | explorer helper: schema v2, 6 MF groups len-5, history.best len 50 | unit | same file (test_explorer_helper) | ✅ | ✅ green |
+| 07-01-06 | 01 | 1 | PROOF-02 | T-07-02 / — | no writes to results/ or weather/ during helper runs | unit | same file (test_artifacts_untouched) | ✅ | ✅ green |
+| 07-01-07 | 01 | 1 | PROOF-02 | — | static audits: no Agg/show/savefig under dashboard/, no absolute paths, no pandas/evolution imports on Results page | grep audit | same file (static checks) | ✅ | ✅ green |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
 
@@ -74,11 +75,11 @@ created: "2026-09-28"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-28 — 7/7 rows green, dashboard suite 7/7, artifacts untouched (validate-phase audit)
