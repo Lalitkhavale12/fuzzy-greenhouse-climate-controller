@@ -74,6 +74,8 @@ def _import_page(fname):
     import importlib.util
     import sys as _sys
     _stub_streamlit()
+    import matplotlib as _mpl
+    _mpl.use("Agg")  # headless figure construction; pages must not set this
     path = os.path.join(PAGES_DIR, fname)
     modname = "dashpage_" + fname[:-3].replace("-", "_")
     spec = importlib.util.spec_from_file_location(modname, path)
@@ -87,7 +89,8 @@ def test_page_set():
     import re
     assert os.path.exists(APP), APP
     files = sorted(os.listdir(PAGES_DIR))
-    assert "04_results.py" in files, files  # tracer page; full set in expansion
+    for expect in EXPECTED_PAGES:
+        assert expect in files, (expect, files)
     prefixes = [re.match(r"([0-9]+)[_ -]*", f).group(1) for f in files if f.endswith(".py")]
     assert prefixes == sorted(prefixes), prefixes
     src = _read("dashboard/app.py")
@@ -145,6 +148,26 @@ def test_controllers_helper():
     print("controllers helper: 4 x 1440 on shared weather in %.2fs, GA wins" % dt)
 
 
+def test_explorer_helper():
+    import json
+    with open(os.path.join(ROOT, "results/ga_optimized_params.json")) as f:
+        d = json.load(f)
+    assert d["schema_version"] == 2, "stale artifact: schema_version != 2"
+    assert len(d["history"]["best"]) == 50, len(d["history"]["best"])
+    assert len(d["history"]["mean"]) == 50, len(d["history"]["mean"])
+    from src.ga_fuzzy_controller import load_optimized_mfs
+    mfs, gains = load_optimized_mfs(os.path.join(ROOT, "results/ga_optimized_params.json"))
+    assert set(mfs) == {"eT", "deT", "du", "eH", "deH", "dv"}, set(mfs)
+    for k, g in mfs.items():
+        assert len(g["centers"]) == 5 and len(g["widths"]) == 5, (k,)
+    src = _read("dashboard/pages/03_ga_explorer.py")
+    assert "load_optimized_mfs" in src, "MFs must come via the validated loader"
+    assert "genetic_algorithm" not in src, "no evolution entry points on the page"
+    for word in ("evolve", "train(", "fit("):
+        assert word not in src, ("03 page evolution ref", word)
+    print("explorer helper: schema v2, 6 MF groups len-5, 50-gen history")
+
+
 def test_source_audits():
     import re
     pages = {}
@@ -169,6 +192,17 @@ def test_source_audits():
     ga_refs = [l for l in src02.splitlines()
                if "genetic_algorithm" in l or re.search(r"\bevolve\b", l)]
     assert not ga_refs, ("02 page evolution refs", ga_refs)
+    src03 = pages.get("03_ga_explorer.py", "")
+    for line in src03.splitlines():
+        s = line.strip()
+        assert not s.startswith("def "), (fname, s)
+        assert not s.startswith("class "), (fname, s)
+    assert "schema_version" in src03 and "== 2" in src03, "03 schema v2 assert"
+    src04 = pages.get("04_results.py", "")
+    assert "== COLUMNS" in src04, "04 CSV header assert"
+    assert "len(rows) == 8" in src04, "04 8-row assert"
+    for fname, src in pages.items():
+        assert 'open(' not in src or '"w"' not in src, (fname, "no writes")
     print("source audits: no Agg/show/savefig, no abs paths, no recompute")
 
 
