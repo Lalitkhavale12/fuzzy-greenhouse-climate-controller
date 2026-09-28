@@ -1,0 +1,151 @@
+"""Headless dashboard checks (PROOF-02a-g).
+
+Plain-assert standalone suite in the tests/test_notebooks.py style:
+pytest-compatible test_* names, imports inside bodies, runner prints
+PASS/FAIL and sys.exit(1) on failure. Streamlit pages call st.* at
+import, so the import-smoke test stubs streamlit in sys.modules first.
+
+Run:  python tests/test_dashboard.py
+"""
+
+import os
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+APP = os.path.join(ROOT, "dashboard", "app.py")
+PAGES_DIR = os.path.join(ROOT, "dashboard", "pages")
+
+EXPECTED_PAGES = ["01_model_sim.py", "02_controllers.py",
+                  "03_ga_explorer.py", "04_results.py"]
+
+
+def _read(rel):
+    with open(os.path.join(ROOT, rel)) as f:
+        return f.read()
+
+
+def _stub_streamlit():
+    import sys as _sys
+    import types as _types
+
+    class _Stub:
+        def __getattr__(self, name):
+            if name == "cache_data":
+                def deco(*dargs, **dkw):
+                    if len(dargs) == 1 and callable(dargs[0]) and not dkw:
+                        return dargs[0]
+
+                    def wrap(fn):
+                        return fn
+                    return wrap
+                return deco
+            if name == "sidebar":
+                return self
+            if name == "columns":
+                def cols(n, *a, **k):
+                    n = n if isinstance(n, int) else len(n)
+                    return [_Stub() for _ in range(n)]
+                return cols
+            if name == "slider":
+                def slider(label, min_value=None, max_value=None,
+                           value=None, *a, **k):
+                    if value is not None:
+                        return value
+                    return min_value if min_value is not None else 0
+                return slider
+            if name == "selectbox":
+                def sb(label, options, index=0, *a, **k):
+                    try:
+                        return list(options)[index]
+                    except Exception:
+                        return None
+                return sb
+
+            def _noop(*a, **k):
+                return None
+            return _noop
+
+        def __call__(self, *a, **k):
+            return None
+
+    _sys.modules["streamlit"] = _Stub()
+
+
+def _import_page(fname):
+    import importlib.util
+    import sys as _sys
+    _stub_streamlit()
+    path = os.path.join(PAGES_DIR, fname)
+    modname = "dashpage_" + fname[:-3].replace("-", "_")
+    spec = importlib.util.spec_from_file_location(modname, path)
+    mod = importlib.util.module_from_spec(spec)
+    _sys.modules[modname] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_page_set():
+    import re
+    assert os.path.exists(APP), APP
+    files = sorted(os.listdir(PAGES_DIR))
+    assert "04_results.py" in files, files  # tracer page; full set in expansion
+    prefixes = [re.match(r"([0-9]+)[_ -]*", f).group(1) for f in files if f.endswith(".py")]
+    assert prefixes == sorted(prefixes), prefixes
+    src = _read("dashboard/app.py")
+    assert "set_page_config" in src, "app.py must call set_page_config"
+    assert src.index("set_page_config") < src.index("st.title"), \
+        "set_page_config must precede other st.* calls"
+    for bad in ("run_closed_loop", "compare(", "savefig", "plt.show"):
+        assert bad not in src, ("app.py landing-only", bad)
+    print("app + 4 numbered pages present in sidebar order, app landing-only")
+
+
+def test_pages_import():
+    for fname in EXPECTED_PAGES:
+        if not os.path.exists(os.path.join(PAGES_DIR, fname)):
+            continue  # wave-1 files land in the expansion task
+        _import_page(fname)
+        print(f"import-ok {fname}")
+
+
+def test_results_helper():
+    mod = _import_page("04_results.py")
+    rows = mod.load_scoreboard()
+    from src.metrics import COLUMNS
+    assert list(rows[0].keys()) == COLUMNS, "header != COLUMNS"
+    assert len(rows) == 8, "expected 4 controllers x 2 weathers"
+    ranked = mod.holdout_ranking(rows)
+    assert [r["controller"] for r in ranked] == ["ga_fuzzy", "onoff", "fuzzy", "pid"], \
+        [r["controller"] for r in ranked]
+    assert ranked[0]["controller"] == "ga_fuzzy", "rank-1 identity must be GA fuzzy"
+    src = _read("dashboard/pages/04_results.py")
+    assert "compare(" not in src, "Results page must never recompute the scoreboard"
+    assert "argsort" not in src, "ranking from rank column, never recomputed"
+    print("results helper: 8 rows, COLUMNS header, GA rank 1 on holdout")
+
+
+def test_artifacts_untouched():
+    import subprocess
+    out = subprocess.run(["git", "status", "--porcelain", "results/", "weather/"],
+                         capture_output=True, text=True, cwd=ROOT).stdout
+    tracked = [ln for ln in out.splitlines() if not ln.startswith("??")]
+    assert not tracked, tracked
+    print("results/ + weather/ tracked artifacts untouched")
+
+
+if __name__ == "__main__":
+    import sys
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    failures = []
+    for name, fn in sorted(globals().items()):
+        if name.startswith("test_") and callable(fn):
+            try:
+                fn()
+                print(f"PASS {name}")
+            except Exception as exc:
+                failures.append(name)
+                print(f"FAIL {name}: {exc!r}")
+    if failures:
+        print(f"{len(failures)} check(s) failed: {failures}")
+        sys.exit(1)
+    print("all checks passed")
