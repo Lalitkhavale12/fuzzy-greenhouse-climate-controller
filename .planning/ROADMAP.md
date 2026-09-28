@@ -88,6 +88,10 @@ Plans:
 4. Notebooks run top-to-bottom against `src/` functions
 
 **Requirements:** PROOF-01
+**Plans:** 1 plan
+
+Plans:
+- [x] 06-PLAN.md — 05_comparison + 06_final_results notebooks, 13-check audit harness, 04 uniformity fixes (executed, verified 2026-09-28; clean review, 0 findings)
 
 ## Phase 7: Streamlit Dashboard
 **Goal:** Four-page thin UI wrapper over the finished `src/` library.
