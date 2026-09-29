@@ -26,14 +26,14 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import matplotlib.pyplot as plt
 import numpy as np
 
 from src.metrics import COLUMNS  # frozen column contract, never retyped
 
-SCOREBOARD_PATH = "results/comparison.csv"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+SCOREBOARD_PATH = os.path.join(ROOT, "results", "comparison.csv")
 
 LIGHT_FACE = "#F7FAF3"  # pale greenhouse white — figure background
 LIGHT_AXES = "#FFFFFF"  # axes wells
@@ -52,8 +52,11 @@ def scoreboard_csv_bytes(path=SCOREBOARD_PATH):
             raw = f.read()
     except OSError as exc:
         raise ValueError("frozen scoreboard unreadable: %s" % exc)
-    header = raw.splitlines()[0].decode("utf-8").split(",")
-    assert header == COLUMNS, "stale artifact: header != COLUMNS"
+    header = raw.splitlines()
+    if not header:
+        raise ValueError("frozen scoreboard is empty: %s" % path)
+    if header[0].decode("utf-8").split(",") != COLUMNS:
+        raise ValueError("stale artifact: header != COLUMNS")
     return raw
 
 
@@ -70,7 +73,12 @@ def verdict_text(rows):
     (GA below on/off AND below PID, %.2f costs). Reads the CSV rows only.
     """
     ranked = holdout_ranking(rows)
+    if not ranked:
+        raise ValueError("no holdout-seed21 rows in scoreboard")
     cost = {r["controller"]: float(r["cost"]) for r in ranked}
+    for c in ("ga_fuzzy", "onoff", "pid"):
+        if c not in cost:
+            raise ValueError("holdout missing controller: %s" % c)
     winner = ranked[0]["controller"]
     beats = cost["ga_fuzzy"] < cost["onoff"] and cost["ga_fuzzy"] < cost["pid"]
     margin_onoff = cost["onoff"] - cost["ga_fuzzy"]
@@ -104,9 +112,6 @@ def fig_to_png_bytes(fig, dpi=150):
     fig.savefig(buf, format="png", dpi=dpi, facecolor=fig.get_facecolor())
     buf.seek(0)  # mandatory — without this the download is empty
     return buf.getvalue()
-
-
-figure_png_bytes = fig_to_png_bytes  # alias: build-key style name
 
 
 def _paint_light(fig, axes):
@@ -163,13 +168,14 @@ def build_results_figure(rows):
 if __name__ == "__main__":
     with open(SCOREBOARD_PATH) as _f:
         _rows = list(csv.DictReader(_f))
-    assert scoreboard_csv_bytes() == open(SCOREBOARD_PATH, "rb").read()
+    with open(SCOREBOARD_PATH, "rb") as _fb:
+        assert scoreboard_csv_bytes() == _fb.read()
     _t = verdict_text(_rows)
     for _s in ("ga_fuzzy", "onoff", "pid", "fuzzy", "iae_T", "iae_H",
                "energy", "train_seed=7", "holdout_seed=21", "1.0/1.0/0.01"):
         assert _s in _t, _s
-    import matplotlib as _mpl
-    _mpl.use("Agg")
+    import matplotlib as _mpl  # noqa: backend already selected at import;
+    _mpl.use("Agg")  # no-op guard: savefig-to-BytesIO needs no display
     _png = fig_to_png_bytes(build_results_figure(_rows))
     assert _png[:4] == b"\x89PNG" and len(_png) > 1024, len(_png)
     print("helpers self-check: CSV ==, verdict substrings ok, PNG magic ok")
