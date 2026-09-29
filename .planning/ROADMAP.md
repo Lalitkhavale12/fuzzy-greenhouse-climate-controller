@@ -208,7 +208,17 @@ Plans:
   2. Layout stacks vertically and stays usable in a narrow/mobile viewport
   3. User can download one ZIP containing scoreboard CSV + verdict summary + chart PNGs
 
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+**Wave 1**
+
+- [ ] 10-01-PLAN.md — evidence-ZIP tracer: helpers builder + stub extension + Results KPI/tabs/expander/ZIP wiring
+
+**Wave 2** *(blocked on Wave 1 completion)*
+
+- [ ] 10-02-PLAN.md — UI-03 expansion: KPI/expander restyle on 01/02/03 + Controllers tabs + layout asserts
+
 **UI hint**: yes
 
 ## v1.1 Progress
