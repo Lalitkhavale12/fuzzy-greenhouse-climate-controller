@@ -213,11 +213,11 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 10-01-PLAN.md — evidence-ZIP tracer: helpers builder + stub extension + Results KPI/tabs/expander/ZIP wiring
+- [x] 10-01-PLAN.md — evidence-ZIP tracer: helpers builder + stub extension + Results KPI/tabs/expander/ZIP wiring
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 10-02-PLAN.md — UI-03 expansion: KPI/expander restyle on 01/02/03 + Controllers tabs + layout asserts
+- [x] 10-02-PLAN.md — UI-03 expansion: KPI/expander restyle on 01/02/03 + Controllers tabs + layout asserts (executed, verified 2026-09-29; 2 review warnings fixed in 368c9bc)
 
 **UI hint**: yes
 
