@@ -204,6 +204,48 @@ def run_scenario_pair(T_sp, RH_sp, seed_a, seed_b, runner):
     return runs_a, runs_b, scenario_delta(runs_a, runs_b, T_sp, RH_sp)
 
 
+def build_scenario_figure(hours, runs_a, runs_b, T_sp, RH_sp, seed_a, seed_b):
+    """Paired scenario traces: rows T/RH/heater, columns side A/B.
+
+    One combined figure (never closed); the page serializes it via
+    fig_to_png_bytes and shows it with a single st.pyplot call. Full
+    1440-step traces (no decimation -- on/off chatter is signal).
+    """
+    fig, ax = plt.subplots(3, 2, figsize=(12, 9), sharex=True)
+    sides = (("A", seed_a, runs_a), ("B", seed_b, runs_b))
+    for j, (side, seed, runs) in enumerate(sides):
+        for name in DISPLAY.values():
+            T_h, RH_h, U_h = runs[name]
+            ax[0, j].plot(hours, T_h, label=name, linewidth=1.2)
+        ax[0, j].axhline(T_sp, color="k", linestyle="--", linewidth=0.8)
+        ax[0, j].set_ylabel("T (degC)")
+        ax[0, j].set_title("side %s (seed %d) T" % (side, seed))
+        ax[0, j].legend(fontsize=8)
+        ax[0, j].grid(alpha=0.3)
+        for name in DISPLAY.values():
+            T_h, RH_h, U_h = runs[name]
+            ax[1, j].plot(hours, RH_h, label=name, linewidth=1.2)
+        ax[1, j].axhline(RH_sp, color="k", linestyle="--", linewidth=0.8)
+        ax[1, j].set_ylabel("RH (%)")
+        ax[1, j].set_title("side %s (seed %d) RH" % (side, seed))
+        ax[1, j].legend(fontsize=8)
+        ax[1, j].grid(alpha=0.3)
+        for name in DISPLAY.values():
+            T_h, RH_h, U_h = runs[name]
+            ax[2, j].plot(hours, [u["heater"] for u in U_h], label=name,
+                           linewidth=1.2)
+        ax[2, j].set_xlabel("hour of day")
+        ax[2, j].set_ylabel("heater duty")
+        ax[2, j].set_title("side %s (seed %d) heater" % (side, seed))
+        ax[2, j].legend(fontsize=8)
+        ax[2, j].grid(alpha=0.3)
+    fig.suptitle("Scenario A (seed %d) vs B (seed %d) -- T_sp %.1f C, RH_sp %d %%"
+                 % (seed_a, seed_b, T_sp, RH_sp))
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
 if __name__ == "__main__":
     with open(SCOREBOARD_PATH) as _f:
         _rows = list(csv.DictReader(_f))

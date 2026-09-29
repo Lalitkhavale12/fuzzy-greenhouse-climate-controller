@@ -173,12 +173,37 @@ def test_controllers_helper():
 
 
 def test_scenario_delta():
+    import time
     mod = _import_page("02_controllers.py")
     helpers = _import_helpers()
     assert mod.resolve_weather(7) == "weather/weather_profile.csv"
     assert mod.resolve_weather(21) == "weather/holdout_21.csv"
+    # counting cache emulates @st.cache_data (the headless stub has no
+    # cache): stable (T_sp, RH_sp, seed) args must key cache hits so a
+    # warm re-render recomputes nothing (T-09-04).
+    calls = []
+    cache = {}
+
+    def cached_runner(T_sp, RH_sp, seed):
+        key = (T_sp, RH_sp, seed)
+        if key not in cache:
+            calls.append(key)
+            cache[key] = mod.run_all_four(T_sp, RH_sp, seed)
+        return cache[key]
+
+    t0 = time.time()
     runs_a, runs_b, delta_rows = helpers.run_scenario_pair(
-        25.0, 70, 7, 21, mod.run_all_four)
+        25.0, 70, 7, 21, cached_runner)
+    cold_dt = time.time() - t0
+    assert cold_dt < 6.0, cold_dt
+    assert len(calls) == 2, calls  # one cached call per side, never more
+    t0 = time.time()
+    runs_a2, runs_b2, delta2 = helpers.run_scenario_pair(
+        25.0, 70, 7, 21, cached_runner)
+    warm_dt = time.time() - t0
+    assert len(calls) == 2, calls  # warm call adds zero sim calls
+    assert warm_dt < 0.5, warm_dt
+    assert delta2 == delta_rows  # cache-hit recompute is identical
     for runs in (runs_a, runs_b):
         assert set(runs) == {"on/off", "PID", "hand fuzzy", "GA fuzzy"}, \
             set(runs)
@@ -202,8 +227,19 @@ def test_scenario_delta():
     assert costs_a["GA fuzzy"] < costs_a["PID"], costs_a
     assert costs_b["GA fuzzy"] < costs_b["on/off"], costs_b
     assert costs_b["GA fuzzy"] < costs_b["PID"], costs_b
+    import numpy as _np
+    hours = _np.arange(0, 1440) / 60.0  # same hours run_all_four returns;
+    # figure render is untimed (all exhibit pages pay it; only the sim
+    # recompute path is budget-gated)
+    fig = helpers.build_scenario_figure(hours, runs_a, runs_b,
+                                        25.0, 70, 7, 21)
+    title = fig._suptitle.get_text()
+    assert "seed 7" in title and "seed 21" in title, title
+    png = helpers.fig_to_png_bytes(fig)
+    assert png[:4] == b"\x89PNG" and len(png) > 1024, len(png)
     print("scenario delta: 2 x 4 x 1440 pair, B-minus-A float-equal, "
-          "GA wins both sides at 7/21")
+          "GA wins both sides at 7/21, cold %.2fs, warm %.3fs, "
+          "paired fig PNG ok" % (cold_dt, warm_dt))
 
 
 def test_explorer_helper():

@@ -18,7 +18,6 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspa
 os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import numpy as np
-import matplotlib.pyplot as plt
 
 import streamlit as st
 
@@ -28,9 +27,8 @@ from src.pid_controller import pid_step
 from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
-from dashboard.helpers import fig_to_png_bytes, scenario_delta
-
-NAMES = ["on/off", "PID", "hand fuzzy", "GA fuzzy"]
+from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
+    scenario_delta
 
 
 def resolve_weather(seed):
@@ -83,39 +81,8 @@ rank_a = sorted(costs_a, key=costs_a.get).index("GA fuzzy") + 1
 rank_b = sorted(costs_b, key=costs_b.get).index("GA fuzzy") + 1
 st.write("GA still wins: side A rank %d / side B rank %d" % (rank_a, rank_b))
 
-# Tracer scaffold: single-side traces on side A only; task 2 replaces this
-# block with the combined paired-trace figure (one st.pyplot, seeds in title).
-hours, runs, seed = hours_a, runs_a, seed_A
-
-fig, ax = plt.subplots(3, 1, figsize=(10, 9), sharex=True)
-fig.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)
-for _a in ax:
-    _a.set_facecolor("#FFFFFF")  # explicit light axes, default C-series data colors
-    _a.tick_params(colors="#263023")
-for name in NAMES:
-    T_h, RH_h, U_h = runs[name]
-    ax[0].plot(hours, T_h, label=name, linewidth=1.2)
-ax[0].axhline(T_sp, color="k", linestyle="--", linewidth=0.8)
-ax[0].set_ylabel("T (degC)")
-ax[0].legend(fontsize=8)
-ax[0].grid(alpha=0.3)
-for name in NAMES:
-    T_h, RH_h, U_h = runs[name]
-    ax[1].plot(hours, RH_h, label=name, linewidth=1.2)
-ax[1].axhline(RH_sp, color="k", linestyle="--", linewidth=0.8)
-ax[1].set_ylabel("RH (%)")
-ax[1].legend(fontsize=8)
-ax[1].grid(alpha=0.3)
-for name in NAMES:
-    T_h, RH_h, U_h = runs[name]
-    ax[2].plot(hours, [u["heater"] for u in U_h], label=name, linewidth=1.2)
-ax[2].set_xlabel("hour of day")
-ax[2].set_ylabel("heater duty")
-ax[2].legend(fontsize=8)
-ax[2].grid(alpha=0.3)
-fig.suptitle("Closed-loop traces (T_sp %.1f C, RH_sp %d %%, seed %d)"
-             % (T_sp, RH_sp, seed))
-fig.tight_layout()
+fig = build_scenario_figure(hours_a, runs_a, runs_b, T_sp, RH_sp,
+                            seed_A, seed_B)
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="controllers_traces.png", mime="image/png")
 st.pyplot(fig)
