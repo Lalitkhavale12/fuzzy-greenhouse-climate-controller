@@ -24,6 +24,7 @@ in-memory BytesIO only, zero new deps.
 Run:  python dashboard/helpers.py  (headless self-check, no browser)
 """
 
+import copy
 import csv
 import io
 import os
@@ -241,6 +242,58 @@ def build_scenario_figure(hours, runs_a, runs_b, T_sp, RH_sp, seed_a, seed_b):
         ax[2, j].grid(alpha=0.3)
     fig.suptitle("Scenario A (seed %d) vs B (seed %d) -- T_sp %.1f C, RH_sp %d %%"
                  % (seed_a, seed_b, T_sp, RH_sp))
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
+def scratch_mfs_from_deltas(eT_centers, du_centers, eps=1e-3):
+    """Hand MFs deep-copied with dragged eT/du centers, neighbor-clamped."""
+    from src.fuzzy_controller import FUZZY_MFS
+    scratch = copy.deepcopy(FUZZY_MFS)
+    warnings = []
+    for key, vals in (("eT", eT_centers), ("du", du_centers)):
+        vals = [float(v) for v in vals]
+        assert len(vals) == 5, (key, len(vals))
+        hand = [float(c) for c in scratch[key]["centers"]]
+        clamped = []
+        for i, v in enumerate(vals):
+            if not np.isfinite(v):
+                warnings.append("%s[%d] non-finite input, kept hand %.4g"
+                                % (key, i, hand[i]))
+                v = hand[i]
+            lo = clamped[-1] + eps if i > 0 else -np.inf
+            hi = vals[i + 1] - eps if i < 4 else np.inf
+            c = min(max(v, lo), hi)
+            if c != v:
+                warnings.append("%s[%d] clamped to %.4g (neighbor bound)"
+                                % (key, i, c))
+            clamped.append(c)
+        scratch[key]["centers"] = np.array(clamped, dtype=float)
+    return scratch, warnings
+
+
+def tloop_response_curve(mfs, n=201, lo=-5.0, hi=5.0):
+    """T-loop defuzz slice: du over an eT grid at deT=0 (stateless, ~28 ms)."""
+    from src.fuzzy_controller import infer
+    grid = np.linspace(lo, hi, n)
+    EC, EW = mfs["eT"]["centers"], mfs["eT"]["widths"]
+    DC, DW = mfs["deT"]["centers"], mfs["deT"]["widths"]
+    OC, OW = mfs["du"]["centers"], mfs["du"]["widths"]
+    vals = np.array([infer(float(e), 0.0, EC, EW, DC, DW, OC, OW, -1.0, 1.0)
+                     for e in grid])
+    return grid, vals
+
+
+def build_explorer_figure(grid, hand_vals, scratch_vals):
+    """Frozen-hand solid vs scratch dashed response overlay (unclosed)."""
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.plot(grid, hand_vals, "C0-", label="frozen hand response")
+    ax.plot(grid, scratch_vals, "C1--", label="scratch (dragged)")
+    ax.set_xlabel("eT (degC)")
+    ax.set_ylabel("du (duty/step)")
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
     _paint_light(fig, ax)
     fig.tight_layout()
     return fig

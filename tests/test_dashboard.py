@@ -262,6 +262,61 @@ def test_explorer_helper():
     print("explorer helper: schema v2, 6 MF groups len-5, 50-gen history")
 
 
+def test_scratch_purity():
+    import inspect
+    import numpy as _np
+    helpers = _import_helpers()
+    from src.fuzzy_controller import FUZZY_MFS
+    from src.ga_fuzzy_controller import load_optimized_mfs
+    hand = {k: (v["centers"].copy(), v["widths"].copy())
+            for k, v in FUZZY_MFS.items()}
+    opt_before = load_optimized_mfs(os.path.join(ROOT, "results/ga_optimized_params.json"))[0]
+    opt_snap = {k: (v["centers"].copy(), v["widths"].copy())
+                for k, v in opt_before.items()}
+    eT0 = [float(c) for c in hand["eT"][0]]
+    du0 = [float(c) for c in hand["du"][0]]
+    scratch, warns = helpers.scratch_mfs_from_deltas(eT0, du0)
+    assert warns == [], warns
+    grid, hand_vals = helpers.tloop_response_curve(FUZZY_MFS)
+    _, zero_vals = helpers.tloop_response_curve(scratch)
+    assert _np.allclose(zero_vals, hand_vals), "zero-drag must coincide"
+    dragged = [c + (0.5 if i == 2 else 0.0) for i, c in enumerate(eT0)]
+    scratch2, _ = helpers.scratch_mfs_from_deltas(dragged, du0)
+    _, drag_vals = helpers.tloop_response_curve(scratch2)
+    dev = float(_np.abs(drag_vals - hand_vals).max())
+    assert dev > 1e-3, dev
+    for k in FUZZY_MFS:
+        assert _np.array_equal(FUZZY_MFS[k]["centers"], hand[k][0]), k
+        assert _np.array_equal(FUZZY_MFS[k]["widths"], hand[k][1]), k
+    opt_after = load_optimized_mfs(os.path.join(ROOT, "results/ga_optimized_params.json"))[0]
+    for k in opt_snap:
+        assert _np.array_equal(opt_after[k]["centers"], opt_snap[k][0]), k
+        assert _np.array_equal(opt_after[k]["widths"], opt_snap[k][1]), k
+    assert _np.array_equal(scratch["eT"]["widths"], hand["eT"][1]), "widths frozen"
+    assert _np.array_equal(scratch["du"]["widths"], hand["du"][1]), "widths frozen"
+    probe = (inspect.getsource(helpers.scratch_mfs_from_deltas)
+             + inspect.getsource(helpers.tloop_response_curve)
+             + inspect.getsource(helpers.build_explorer_figure))
+    for bad in ("run_closed_loop", "all_metrics", "weighted_cost"):
+        assert bad not in probe, ("explorer readout path", bad)
+    print("scratch purity: bit-identical baselines, coincide-at-zero, "
+          "+0.5 drag dev %.4g duty, no cost kernels" % dev)
+
+
+def test_scratch_clamp():
+    helpers = _import_helpers()
+    from src.fuzzy_controller import FUZZY_MFS
+    hand_eT = [float(c) for c in FUZZY_MFS["eT"]["centers"]]
+    hand_du = [float(c) for c in FUZZY_MFS["du"]["centers"]]
+    bad_eT = [hand_eT[0], hand_eT[3] + 1.0, hand_eT[2], hand_eT[3], hand_eT[4]]
+    scratch, warns = helpers.scratch_mfs_from_deltas(bad_eT, hand_du)
+    assert warns, "ordering violation must warn"
+    c = list(scratch["eT"]["centers"])
+    assert all(b - a > 0 for a, b in zip(c, c[1:])), c
+    assert all("clamped" in w or "non-finite" in w for w in warns), warns
+    print("scratch clamp: %d warning(s), ordered centers, no raise" % len(warns))
+
+
 def test_source_audits():
     import re
     pages = {}
