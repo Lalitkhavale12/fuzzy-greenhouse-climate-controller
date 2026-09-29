@@ -23,7 +23,8 @@ import streamlit as st
 from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
-    tloop_response_curve, build_explorer_figure
+    tloop_response_curve, build_explorer_figure, replay_slice, \
+    build_replay_figure
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -101,6 +102,15 @@ fig.tight_layout()
 st.download_button("Download convergence chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="ga_convergence.png", mime="image/png")
 st.pyplot(fig)
+
+st.subheader("Convergence replay (scrub generations)")
+gen = st.slider("generation", 1, 50, 50, 1)
+g, g_best, g_mean = replay_slice(gen, best, mean)
+st.metric("replay readout", "gen %d/50 \u00b7 best %.2f" % (g, g_best))
+fig_r = build_replay_figure(best, mean, g)
+st.download_button("Download replay chart (PNG)", data=fig_to_png_bytes(fig_r),
+                   file_name="ga_convergence_replay.png", mime="image/png")
+st.pyplot(fig_r)
 
 st.subheader("Membership before/after: hand solid vs GA dashed")
 MF_KEYS = ["eT", "eH"]
