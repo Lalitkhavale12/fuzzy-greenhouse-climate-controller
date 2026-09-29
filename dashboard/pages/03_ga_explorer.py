@@ -26,17 +26,17 @@ from src.ga_fuzzy_controller import load_optimized_mfs
 from src.metrics import COLUMNS  # frozen column contract, never retyped
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
-    build_replay_figure, GEN_COUNT, holdout_ranking, DISPLAY
+    build_replay_figure, GEN_COUNT, holdout_ranking, DISPLAY, load_kpi_row
 
 JSON_PATH = "results/ga_optimized_params.json"
 
 st.title("GA Explorer — frozen tuned artifact")
 
-with open("results/comparison.csv") as _f:
-    _rows = list(csv.DictReader(_f))
-assert list(_rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
-assert len(_rows) == 8, "expected 4 controllers x 2 weathers"
-kpi = next(r for r in holdout_ranking(_rows) if r["controller"] == "ga_fuzzy")
+try:
+    kpi = load_kpi_row()
+except (OSError, ValueError, AssertionError, KeyError) as exc:
+    st.error("Frozen scoreboard unreadable: %s" % exc)
+    st.stop()
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
           "%.2f" % float(kpi["cost"]))

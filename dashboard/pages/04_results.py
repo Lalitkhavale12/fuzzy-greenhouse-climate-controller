@@ -20,7 +20,7 @@ from src.metrics import COLUMNS  # frozen column contract, never retyped
 from dashboard.helpers import (ORDER, DISPLAY, WEATHERS, holdout_ranking,
                                build_results_figure, fig_to_png_bytes,
                                scoreboard_csv_bytes, verdict_text,
-                               evidence_zip_bytes)
+                               evidence_zip_bytes, load_kpi_row)
 
 CSV_PATH = "results/comparison.csv"
 
@@ -45,11 +45,12 @@ try:
     rows = load_scoreboard()
     ranked = holdout_ranking(rows)
     txt = verdict_text(rows)
-except (OSError, ValueError, AssertionError, KeyError) as exc:
+    kpi = load_kpi_row()
+    zip_bytes = evidence_zip_bytes()
+except (OSError, ValueError, AssertionError, KeyError, StopIteration) as exc:
     st.error("Frozen scoreboard unreadable: %s" % exc)
     st.stop()
 
-kpi = next(r for r in ranked if r["controller"] == "ga_fuzzy")
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
           "%.2f" % float(kpi["cost"]))
@@ -81,7 +82,7 @@ st.download_button("Download verdict (TXT)", data=txt,
 fig = build_results_figure(rows)  # single source of truth (helpers.py)
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="results_scoreboard.png", mime="image/png")
-st.download_button("Download evidence pack (ZIP)", data=evidence_zip_bytes(),
+st.download_button("Download evidence pack (ZIP)", data=zip_bytes,
                    file_name="greenhouse_evidence_pack.zip",
                    mime="application/zip")
 st.pyplot(fig)

@@ -23,7 +23,8 @@ import streamlit as st
 from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
 from src.metrics import COLUMNS  # frozen column contract, never retyped
 from src.weather_profile_generator import generate_weather_profile
-from dashboard.helpers import fig_to_png_bytes, holdout_ranking, DISPLAY
+from dashboard.helpers import fig_to_png_bytes, holdout_ranking, DISPLAY, \
+    load_kpi_row
 
 T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
 
@@ -59,11 +60,11 @@ def run_open_loop(heater, fan, fogger, vent, seed):
 
 st.title("Model Sim — open-loop plant + weather")
 
-with open("results/comparison.csv") as _f:
-    _rows = list(csv.DictReader(_f))
-assert list(_rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
-assert len(_rows) == 8, "expected 4 controllers x 2 weathers"
-kpi = next(r for r in holdout_ranking(_rows) if r["controller"] == "ga_fuzzy")
+try:
+    kpi = load_kpi_row()
+except (OSError, ValueError, AssertionError, KeyError) as exc:
+    st.error("Frozen scoreboard unreadable: %s" % exc)
+    st.stop()
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
           "%.2f" % float(kpi["cost"]))

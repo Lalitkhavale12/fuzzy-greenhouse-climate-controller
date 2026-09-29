@@ -57,6 +57,35 @@ ZIP_MEMBERS = ["comparison.csv", "holdout_verdict.txt",
                "06_final_results.png", "ga_optimized_params.json"]
 
 
+def load_kpi_row(path=SCOREBOARD_PATH):
+    """Frozen holdout ga_fuzzy row for uniform KPI cards (WR-01 shared fix).
+
+    Fail-closed ValueError contract (never bare open/assert/next): missing
+    file, empty CSV, stale header, wrong row count, absent holdout block,
+    or missing ga_fuzzy row all raise ValueError for the page's st.error
+    path. Callers wrap in try/except + st.stop (see 04_results.py).
+    """
+    try:
+        with open(path, newline="") as f:
+            rows = list(csv.DictReader(f))
+    except OSError as exc:
+        raise ValueError("frozen scoreboard unreadable: %s" % exc)
+    if not rows:
+        raise ValueError("scoreboard CSV is empty: %s" % path)
+    if list(rows[0].keys()) != COLUMNS:
+        raise ValueError("stale artifact: header != COLUMNS")
+    if len(rows) != 8:
+        raise ValueError("expected 4 controllers x 2 weathers, got %d"
+                         % len(rows))
+    holdout = [r for r in rows if r["weather"] == "holdout-seed21"]
+    if not holdout:
+        raise ValueError("no holdout-seed21 rows in scoreboard")
+    for r in holdout:
+        if r["controller"] == "ga_fuzzy":
+            return r
+    raise ValueError("holdout missing controller: ga_fuzzy")
+
+
 def evidence_zip_bytes():
     """Assemble the frozen evidence pack in memory (never touches disk).
 
@@ -67,20 +96,25 @@ def evidence_zip_bytes():
     """
     with open(SCOREBOARD_PATH, newline="") as f:
         rows = list(csv.DictReader(f))
+    with open(SCOREBOARD_PATH, newline="") as f:
+        rows = list(csv.DictReader(f))
     buf = io.BytesIO()
-    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
-        z.writestr("comparison.csv", scoreboard_csv_bytes())
-        z.writestr("holdout_verdict.txt", verdict_text(rows).encode("utf-8"))
-        z.writestr("results_scoreboard.png",
-                   fig_to_png_bytes(build_results_figure(rows)))
-        for name in ("01_greenhouse_model.png", "02_baselines.png",
-                     "03_fuzzy.png", "04_ga_optimization.png",
-                     "05_comparison.png", "06_final_results.png"):
-            with open(os.path.join(ROOT, "notebooks", name), "rb") as f:
-                z.writestr(name, f.read())
-        with open(os.path.join(ROOT, "results", "ga_optimized_params.json"),
-                  "rb") as f:
-            z.writestr("ga_optimized_params.json", f.read())
+    try:
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr("comparison.csv", scoreboard_csv_bytes())
+            z.writestr("holdout_verdict.txt", verdict_text(rows).encode("utf-8"))
+            z.writestr("results_scoreboard.png",
+                       fig_to_png_bytes(build_results_figure(rows)))
+            for name in ("01_greenhouse_model.png", "02_baselines.png",
+                         "03_fuzzy.png", "04_ga_optimization.png",
+                         "05_comparison.png", "06_final_results.png"):
+                with open(os.path.join(ROOT, "notebooks", name), "rb") as f:
+                    z.writestr(name, f.read())
+            with open(os.path.join(ROOT, "results", "ga_optimized_params.json"),
+                      "rb") as f:
+                z.writestr("ga_optimized_params.json", f.read())
+    except OSError as exc:
+        raise ValueError("frozen evidence input unreadable: %s" % exc)
     return buf.getvalue()
 
 

@@ -29,7 +29,8 @@ from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
 from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
-    scenario_delta, holdout_ranking, DISPLAY, build_controller_trace_figure
+    scenario_delta, holdout_ranking, DISPLAY, build_controller_trace_figure, \
+    load_kpi_row
 
 
 def resolve_weather(seed):
@@ -66,11 +67,11 @@ def run_all_four(T_sp, RH_sp, seed):
 
 st.title("Controllers — side-by-side on shared weather")
 
-with open("results/comparison.csv") as _f:
-    _rows = list(csv.DictReader(_f))
-assert list(_rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
-assert len(_rows) == 8, "expected 4 controllers x 2 weathers"
-kpi = next(r for r in holdout_ranking(_rows) if r["controller"] == "ga_fuzzy")
+try:
+    kpi = load_kpi_row()
+except (OSError, ValueError, AssertionError, KeyError) as exc:
+    st.error("Frozen scoreboard unreadable: %s" % exc)
+    st.stop()
 c1, c2, c3, c4 = st.columns(4)
 c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
           "%.2f" % float(kpi["cost"]))
