@@ -52,6 +52,10 @@ def _stub_streamlit():
                 def tabs(labels, *a, **k):
                     return [_Stub() for _ in labels]
                 return tabs
+            if name == "expander":
+                def expander(*a, **k):
+                    return _Stub()
+                return expander
             if name == "slider":
                 def slider(label, min_value=None, max_value=None,
                            value=None, *a, **k):

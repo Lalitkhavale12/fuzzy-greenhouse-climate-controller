@@ -49,16 +49,24 @@ except (OSError, ValueError, AssertionError, KeyError) as exc:
     st.error("Frozen scoreboard unreadable: %s" % exc)
     st.stop()
 
+kpi = next(r for r in ranked if r["controller"] == "ga_fuzzy")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
+          "%.2f" % float(kpi["cost"]))
+c2.metric("%s holdout rank" % DISPLAY["ga_fuzzy"], "#%s" % kpi["rank"])
+c3.metric("IAE_T", "%.2f" % float(kpi["iae_T"]))
+c4.metric("IAE_H", "%.2f" % float(kpi["iae_H"]))
+
 st.subheader("Scoreboard (results/comparison.csv, 8 rows)")
-st.dataframe(rows)
+tab_train, tab_holdout = st.tabs(["Train", "Holdout"])
+with tab_train:
+    st.dataframe([r for r in rows if r["weather"] == WEATHERS[0]])
+with tab_holdout:
+    st.dataframe([r for r in rows if r["weather"] == WEATHERS[1]])
 st.download_button("Download scoreboard (CSV)", data=scoreboard_csv_bytes(),
                    file_name="comparison.csv", mime="text/csv")
 
 st.subheader("Holdout verdict")
-for r in ranked:
-    st.metric(DISPLAY[r["controller"]],
-              "cost %.2f" % float(r["cost"]),
-              "rank #%s" % r["rank"])
 winner = ranked[0]["controller"]
 cost = {r["controller"]: float(r["cost"]) for r in ranked}
 beats = cost["ga_fuzzy"] < cost["onoff"] and cost["ga_fuzzy"] < cost["pid"]
@@ -77,3 +85,9 @@ st.download_button("Download evidence pack (ZIP)", data=evidence_zip_bytes(),
                    file_name="greenhouse_evidence_pack.zip",
                    mime="application/zip")
 st.pyplot(fig)
+
+with st.expander("Provenance"):
+    st.write("Scoreboard: results/comparison.csv (8 rows, frozen). "
+             "GA params: results/ga_optimized_params.json (schema v2). "
+             "Seeds 7/21, weights 1.0/1.0/0.01. "
+             "Charts: notebooks/01-06 PNGs, bundled in the evidence pack.")
