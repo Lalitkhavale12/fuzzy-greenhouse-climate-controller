@@ -15,7 +15,9 @@ APP = os.path.join(ROOT, "dashboard", "app.py")
 PAGES_DIR = os.path.join(ROOT, "dashboard", "pages")
 
 EXPECTED_PAGES = ["01_model_sim.py", "02_controllers.py",
-                  "03_ga_explorer.py", "04_results.py"]
+                   "03_ga_explorer.py", "04_results.py"]
+
+_METRIC_CALLS = []  # recorded st.metric (label, value) calls, headless KPI proof
 
 
 def _read(rel):
@@ -74,6 +76,11 @@ def _stub_streamlit():
                 def dl(label, *a, **k):
                     return None
                 return dl
+            if name == "metric":
+                def metric(label, value=None, *a, **k):
+                    _METRIC_CALLS.append((label, value))
+                    return None
+                return metric
 
             def _noop(*a, **k):
                 return None
@@ -398,9 +405,65 @@ def test_source_audits():
     src04 = pages.get("04_results.py", "")
     assert "== COLUMNS" in src04, "04 CSV header assert"
     assert "len(rows) == 8" in src04, "04 8-row assert"
+    for fname in ("01_model_sim.py", "02_controllers.py",
+                  "03_ga_explorer.py", "04_results.py"):
+        assert "st.expander" in pages[fname], (fname, "expander")
+        assert ".metric(" in pages[fname], (fname, "metric")
+    assert "st.tabs" in pages["02_controllers.py"], "02 tabs"
+    assert "st.tabs" in pages["04_results.py"], "04 tabs"
+    assert "st.tabs" not in pages["01_model_sim.py"], "01 single flow"
+    assert "st.tabs" not in pages["03_ga_explorer.py"], "03 single flow"
     for fname, src in pages.items():
         assert 'open(' not in src or '"w"' not in src, (fname, "no writes")
     print("source audits: no Agg/show/savefig, no abs paths, no recompute")
+
+
+def test_layout_elements():
+    import csv
+    import re
+    pages = {}
+    for fname in os.listdir(PAGES_DIR):
+        if fname.endswith(".py"):
+            with open(os.path.join(PAGES_DIR, fname)) as f:
+                pages[fname] = f.read()
+    for fname in EXPECTED_PAGES:
+        src = pages[fname]
+        assert ".metric(" in src, (fname, "metric")
+        assert "st.columns(4)" in src, (fname, "columns(4)")
+        assert "st.expander" in src, (fname, "expander")
+    assert "st.tabs" in pages["02_controllers.py"], "02 tabs"
+    assert "st.tabs" in pages["04_results.py"], "04 tabs"
+    assert "st.tabs" not in pages["01_model_sim.py"], "01 single flow"
+    assert "st.tabs" not in pages["03_ga_explorer.py"], "03 single flow"
+    with open(os.path.join(ROOT, "results/comparison.csv")) as f:
+        rows = list(csv.DictReader(f))
+    holdout = [r for r in rows if r["weather"] == "holdout-seed21"]
+    kpi = next(r for r in holdout if r["controller"] == "ga_fuzzy")
+    expected = ["%.2f" % float(kpi["cost"]), "#%s" % kpi["rank"],
+                "%.2f" % float(kpi["iae_T"]), "%.2f" % float(kpi["iae_H"])]
+    for fname in EXPECTED_PAGES:
+        del _METRIC_CALLS[:]
+        _import_page(fname)
+        got = [v for _, v in _METRIC_CALLS[:4]]
+        assert got == expected, (fname, got, expected)
+    for fname, src in pages.items():
+        for m in re.finditer(r"st\.columns\((\d+)", src):
+            assert int(m.group(1)) in (2, 4), (fname, m.group(0))
+        with_stack = []
+        for line in src.splitlines():
+            stripped = line.strip()
+            if not stripped or stripped.startswith("#"):
+                continue
+            indent = len(line) - len(line.lstrip())
+            while with_stack and with_stack[-1][0] >= indent:
+                with_stack.pop()
+            if stripped.startswith("with "):
+                with_stack.append((indent, stripped))
+            if "st.pyplot" in stripped:
+                for _, w in with_stack:
+                    assert "col" not in w.lower(), (fname, w, stripped)
+    print("layout elements: KPI rows equal frozen holdout ga_fuzzy row, "
+          "tabs locked to 02/04, expanders everywhere, figures full-width")
 
 
 def test_artifacts_untouched():
