@@ -3,10 +3,11 @@ phase: "09"
 slug: "interactive-analysis"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-29"
+updated: "2026-09-29"
 ---
 
 # Phase 09 — Validation Strategy
@@ -41,12 +42,12 @@ created: "2026-09-29"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 09-01-01 | 01 | 1 | UI-04 | T-09-01 / — | pair runner shape + delta arithmetic + rank line both sides | unit | `python tests/test_dashboard.py` (test_scenario_delta) | ❌ W0 | ⬜ pending |
-| 09-01-02 | 01 | 1 | UI-04 | — | cold tick < ~6 s, warm recompute < 0.5 s | perf | timing asserts inside test_scenario_delta | ❌ W0 | ⬜ pending |
-| 09-01-03 | 01 | 1 | UI-05 | T-09-02 / — | scratch deep-copies; FUZZY_MFS + mfs_opt bit-identical; widths frozen; centers ordered | unit | same file (test_scratch_purity) | ❌ W0 | ⬜ pending |
-| 09-01-04 | 01 | 1 | UI-05 | — | overlay differs-on-drag (> 1e-3) + coincides-at-zero (allclose) | unit | same file (explorer curve asserts) | ❌ W0 | ⬜ pending |
-| 09-01-05 | 01 | 1 | UI-05 | — | out-of-order drag clamped + warning, no exception | unit | same file (test_scratch_clamp) | ❌ W0 | ⬜ pending |
-| 09-01-06 | 01 | 1 | UI-06 | T-09-03 / — | replay indexing 1/25/50 exact + readout format; no evolution imports | unit | same file (test_replay_slice) | ❌ W0 | ⬜ pending |
+| 09-01-01 | 01 | 1 | UI-04 | T-09-01 / — | pair runner shape + delta arithmetic + rank line both sides | unit | `python tests/test_dashboard.py` (test_scenario_delta) | ✅ | ✅ green |
+| 09-01-02 | 01 | 1 | UI-04 | — | cold tick < ~6 s, warm recompute < 0.5 s | perf | timing asserts inside test_scenario_delta | ✅ | ✅ green |
+| 09-01-03 | 01 | 1 | UI-05 | T-09-02 / — | scratch deep-copies; FUZZY_MFS + mfs_opt bit-identical; widths frozen; centers ordered | unit | same file (test_scratch_purity) | ✅ | ✅ green |
+| 09-01-04 | 01 | 1 | UI-05 | — | overlay differs-on-drag (> 1e-3) + coincides-at-zero (allclose) | unit | same file (explorer curve asserts) | ✅ | ✅ green |
+| 09-01-05 | 01 | 1 | UI-05 | — | out-of-order drag clamped + warning, no exception | unit | same file (test_scratch_clamp) | ✅ | ✅ green |
+| 09-01-06 | 01 | 1 | UI-06 | T-09-03 / — | replay indexing 1/25/50 exact + readout format; no evolution imports | unit | same file (test_replay_slice) | ✅ | ✅ green |
 | 09-01-07 | 01 | 1 | UI-04/05/06 | — | source audits hold (no new def on 03, no banned tokens, no genetic_algorithm on 02/03) | static | same file (test_source_audits, extended) | ✅ | ⬜ pending |
 | 09-01-08 | 01 | 1 | UI-04/05/06 | — | pages import under stub; results/+weather/ untouched | smoke | same file (existing guards) | ✅ | ⬜ pending |
 
@@ -76,11 +77,11 @@ created: "2026-09-29"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-29 — 8/8 rows green + dashboard suite 15/15 (validate-phase audit; slider/drag/scrub interaction remains human-side)
