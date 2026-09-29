@@ -134,7 +134,10 @@ Plans:
   2. User can download the scoreboard CSV from the Results page
   3. User can download the verdict summary (who won and by how much)
   4. User can download any comparison chart as PNG
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+- [x] 08-PLAN.md — greenhouse theme sidecar + helpers.py byte builders (CSV/TXT/5 PNGs) + 7 download buttons (executed, verified 2026-09-29; 6 review findings fixed in 8366016)
 **UI hint**: yes
 
 ### Phase 9: Interactive Analysis
