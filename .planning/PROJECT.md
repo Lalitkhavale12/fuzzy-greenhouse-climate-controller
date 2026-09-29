@@ -74,6 +74,18 @@ The GA-optimized fuzzy controller must measurably beat both baselines (on/off an
 | Metrics: RMSE, IAE, ISE, settling, overshoot, energy | Spec | — Pending |
 | Dashboard last | Spec: thin wrapper, requires stable src/ | — Pending |
 
+## Current Milestone: v1.1 Dashboard Polish
+
+**Goal:** Make the Streamlit dashboard interactive and presentation-grade without touching control logic or frozen artifacts.
+
+**Target features:**
+- Greenhouse theme + layout polish (metric cards, tabs, expanders, mobile-friendly)
+- Export center (scoreboard CSV, verdict summary, chart PNG/PDF downloads)
+- Scenario comparison (two weather scenarios side-by-side)
+- Interactive MF explorer (drag MF centers, watch fuzzy response reshape live)
+- GA convergence replay (generation-by-generation playback)
+- Live-weather mode hookup deferred (needs user-supplied weather API — later milestone)
+
 ## Evolution
 
 This document evolves at phase transitions and milestone boundaries.
@@ -92,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-20 after initialization*
+*Last updated: 2026-09-28 — v1.1 Dashboard Polish started (v1.0: phases 01–07 shipped, core value met)*
