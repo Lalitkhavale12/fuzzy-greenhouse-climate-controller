@@ -7,6 +7,7 @@ notebooks/01_greenhouse_model.ipynb cells 2-4 (Agg line dropped).
 Run:  python -m streamlit run dashboard/app.py
 """
 
+import csv
 import os
 import sys
 import tempfile
@@ -20,8 +21,9 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
+from src.metrics import COLUMNS  # frozen column contract, never retyped
 from src.weather_profile_generator import generate_weather_profile
-from dashboard.helpers import fig_to_png_bytes
+from dashboard.helpers import fig_to_png_bytes, holdout_ranking, DISPLAY
 
 T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
 
@@ -56,6 +58,19 @@ def run_open_loop(heater, fan, fogger, vent, seed):
 
 
 st.title("Model Sim — open-loop plant + weather")
+
+with open("results/comparison.csv") as _f:
+    _rows = list(csv.DictReader(_f))
+assert list(_rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
+assert len(_rows) == 8, "expected 4 controllers x 2 weathers"
+kpi = next(r for r in holdout_ranking(_rows) if r["controller"] == "ga_fuzzy")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
+          "%.2f" % float(kpi["cost"]))
+c2.metric("%s holdout rank" % DISPLAY["ga_fuzzy"], "#%s" % kpi["rank"])
+c3.metric("IAE_T", "%.2f" % float(kpi["iae_T"]))
+c4.metric("IAE_H", "%.2f" % float(kpi["iae_H"]))
+
 heater = st.slider("heater duty", 0.0, 1.0, 0.8, 0.05)
 fan = st.slider("fan/cooler duty", 0.0, 1.0, 0.0, 0.05)
 fogger = st.slider("fogger duty", 0.0, 1.0, 0.5, 0.05)
@@ -90,3 +105,11 @@ fig.tight_layout()
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="model_sim_chart.png", mime="image/png")
 st.pyplot(fig)
+
+with st.expander("Provenance"):
+    st.write("Plant: src/greenhouse_model.py step loop "
+             "(notebooks/01 cells 2-4). "
+             "Weather: weather/weather_profile.csv for seed 7 (frozen), "
+             "ephemeral profiles otherwise. "
+             "Scoreboard: results/comparison.csv (8 rows, frozen). "
+             "Seeds 7/21, weights 1.0/1.0/0.01.")

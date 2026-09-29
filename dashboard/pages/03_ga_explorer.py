@@ -8,6 +8,7 @@ No evolution code anywhere on this page.
 Run:  python -m streamlit run dashboard/app.py
 """
 
+import csv
 import json
 import os
 import sys
@@ -22,13 +23,26 @@ import streamlit as st
 
 from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
+from src.metrics import COLUMNS  # frozen column contract, never retyped
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
-    build_replay_figure, GEN_COUNT
+    build_replay_figure, GEN_COUNT, holdout_ranking, DISPLAY
 
 JSON_PATH = "results/ga_optimized_params.json"
 
 st.title("GA Explorer — frozen tuned artifact")
+
+with open("results/comparison.csv") as _f:
+    _rows = list(csv.DictReader(_f))
+assert list(_rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
+assert len(_rows) == 8, "expected 4 controllers x 2 weathers"
+kpi = next(r for r in holdout_ranking(_rows) if r["controller"] == "ga_fuzzy")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
+          "%.2f" % float(kpi["cost"]))
+c2.metric("%s holdout rank" % DISPLAY["ga_fuzzy"], "#%s" % kpi["rank"])
+c3.metric("IAE_T", "%.2f" % float(kpi["iae_T"]))
+c4.metric("IAE_H", "%.2f" % float(kpi["iae_H"]))
 
 try:
     mfs_opt, gains_opt = load_optimized_mfs(JSON_PATH)
@@ -146,3 +160,9 @@ fig2.tight_layout()
 st.download_button("Download MF chart (PNG)", data=fig_to_png_bytes(fig2),
                    file_name="ga_mfs.png", mime="image/png")
 st.pyplot(fig2)
+
+with st.expander("Provenance"):
+    st.write("GA artifact: results/ga_optimized_params.json (schema v2, "
+             "50 generations). "
+             "Scoreboard: results/comparison.csv (8 rows, frozen). "
+             "Seeds 7/21, weights 1.0/1.0/0.01.")
