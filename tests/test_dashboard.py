@@ -48,6 +48,10 @@ def _stub_streamlit():
                     n = n if isinstance(n, int) else len(n)
                     return [_Stub() for _ in range(n)]
                 return cols
+            if name == "tabs":
+                def tabs(labels, *a, **k):
+                    return [_Stub() for _ in labels]
+                return tabs
             if name == "slider":
                 def slider(label, min_value=None, max_value=None,
                            value=None, *a, **k):
@@ -73,6 +77,12 @@ def _stub_streamlit():
 
         def __call__(self, *a, **k):
             return None
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *a):
+            return False
 
     _sys.modules["streamlit"] = _Stub()
 
@@ -420,6 +430,27 @@ def test_export_chart_png():
     print("export png: 89 50 4E 47 magic, %d bytes" % len(png))
 
 
+def test_evidence_zip():
+    import io
+    import zipfile
+    helpers = _import_helpers()
+    data = helpers.evidence_zip_bytes()
+    assert data[:2] == b"PK", data[:8]
+    assert len(data) > 1024, len(data)
+    z = zipfile.ZipFile(io.BytesIO(data))
+    assert z.namelist() == helpers.ZIP_MEMBERS, z.namelist()
+    with open(os.path.join(ROOT, "results/comparison.csv"), "rb") as f:
+        assert z.read("comparison.csv") == f.read(), "CSV member drift"
+    with open(os.path.join(ROOT, "results/ga_optimized_params.json"),
+              "rb") as f:
+        assert z.read("ga_optimized_params.json") == f.read(), \
+            "GA JSON member drift"
+    assert z.read("results_scoreboard.png")[:4] == b"\x89PNG", \
+        "chart PNG member magic"
+    print("evidence zip: PK magic, 10 members, CSV/JSON byte-identical, "
+          "PNG magic ok")
+
+
 def test_export_verdict():
     helpers = _import_helpers()
     mod = _import_page("04_results.py")
@@ -441,7 +472,9 @@ def test_export_wiring():
     expect = {
         "04_results.py": [("comparison.csv", "text/csv"),
                           ("holdout_verdict.txt", "text/plain"),
-                          ("results_scoreboard.png", "image/png")],
+                          ("results_scoreboard.png", "image/png"),
+                          ("greenhouse_evidence_pack.zip",
+                           "application/zip")],
         "01_model_sim.py": [("model_sim_chart.png", "image/png")],
         "02_controllers.py": [("controllers_traces.png", "image/png")],
         "03_ga_explorer.py": [("ga_convergence.png", "image/png"),
@@ -456,8 +489,11 @@ def test_export_wiring():
             assert name in src, (fname, name)
             assert mime in src, (fname, mime)
         total += src.count("download_button")
-    assert total == 9, total
-    print("export wiring: 9 download buttons with filenames+MIME across pages")
+    assert total == 10, total
+    print("export wiring: 10 download buttons with filenames+MIME across pages")
+    src04 = pages["04_results.py"]
+    assert "evidence_pack" in src04, "ZIP button missing on 04_results"
+    assert "application/zip" in src04, "ZIP MIME missing on 04_results"
 
 
 if __name__ == "__main__":
