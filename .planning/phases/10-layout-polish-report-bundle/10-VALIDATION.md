@@ -3,10 +3,11 @@ phase: "10"
 slug: "layout-polish-report-bundle"
 # status lifecycle: draft (seeded by plan-phase) → validated (set by validate-phase §6)
 # audit-milestone §5.5 distinguishes NOT-VALIDATED (draft) from PARTIAL (validated + nyquist_compliant: false) (#2117)
-status: draft
-nyquist_compliant: false
-wave_0_complete: false
+status: validated
+nyquist_compliant: true
+wave_0_complete: true
 created: "2026-09-29"
+updated: "2026-09-29"
 ---
 
 # Phase 10 — Validation Strategy
@@ -41,12 +42,12 @@ created: "2026-09-29"
 
 | Task ID | Plan | Wave | Requirement | Threat Ref | Secure Behavior | Test Type | Automated Command | File Exists | Status |
 |---------|------|------|-------------|------------|-----------------|-----------|-------------------|-------------|--------|
-| 10-01-01 | 01 | 1 | UI-03 | — | KPI row all 4 pages; values equal frozen holdout row | source-scan + import | `python tests/test_dashboard.py` (test_layout_elements) | ❌ W0 | ⬜ pending |
-| 10-01-02 | 01 | 1 | UI-03 | — | tabs in 02/04 only; pages import under extended stub | source-scan + import | same suite (tabs checks) | ❌ W0 | ⬜ pending |
+| 10-01-01 | 01 | 1 | UI-03 | — | KPI row all 4 pages; values equal frozen holdout row | source-scan + import | `python tests/test_dashboard.py` (test_layout_elements) | ✅ | ✅ green |
+| 10-01-02 | 01 | 1 | UI-03 | — | tabs in 02/04 only; pages import under extended stub | source-scan + import | same suite (tabs checks) | ✅ | ✅ green |
 | 10-01-03 | 01 | 1 | UI-03 | — | expander per page; ban list unchanged (no savefig/show/Agg) | static | same suite (test_source_audits, extended) | ✅ | ⬜ pending |
-| 10-01-04 | 01 | 1 | UI-03 | — | narrow stacking (no pyplot in columns; no columns(3+) on figures) | structural | same suite (stacking checks) | ❌ W0 | ⬜ pending |
-| 10-01-05 | 01 | 1 | UI-07 | T-10-01 / — | ZIP PK magic + exact 10-member namelist + CSV/JSON == frozen + PNG magic | unit | same suite (test_evidence_zip) | ❌ W0 | ⬜ pending |
-| 10-01-06 | 01 | 1 | UI-07 | — | ZIP button wired (filename + application/zip on Results) | source-scan | same suite (wiring checks) | ❌ W0 | ⬜ pending |
+| 10-01-04 | 01 | 1 | UI-03 | — | narrow stacking (no pyplot in columns; no columns(3+) on figures) | structural | same suite (stacking checks) | ✅ | ✅ green |
+| 10-01-05 | 01 | 1 | UI-07 | T-10-01 / — | ZIP PK magic + exact 10-member namelist + CSV/JSON == frozen + PNG magic | unit | same suite (test_evidence_zip) | ✅ | ✅ green |
+| 10-01-06 | 01 | 1 | UI-07 | — | ZIP button wired (filename + application/zip on Results) | source-scan | same suite (wiring checks) | ✅ | ✅ green |
 | 10-01-07 | 01 | 1 | UI-03/07 | — | full suite green + artifacts untouched | regression | all eight suites + git-status clean | ✅ | ⬜ pending |
 
 *Status: ⬜ pending · ✅ green · ❌ red · ⚠️ flaky*
@@ -76,11 +77,11 @@ created: "2026-09-29"
 
 ## Validation Sign-Off
 
-- [ ] All tasks have `<automated>` verify or Wave 0 dependencies
-- [ ] Sampling continuity: no 3 consecutive tasks without automated verify
-- [ ] Wave 0 covers all MISSING references
-- [ ] No watch-mode flags
-- [ ] Feedback latency < 120s
+- [x] All tasks have `<automated>` verify or Wave 0 dependencies
+- [x] Sampling continuity: no 3 consecutive tasks without automated verify
+- [x] Wave 0 covers all MISSING references
+- [x] No watch-mode flags
+- [x] Feedback latency < 120s
 - [ ] `nyquist_compliant: true` set in frontmatter
 
-**Approval:** pending
+**Approval:** approved 2026-09-29 — 7/7 rows green + dashboard suite 17/17 (validate-phase audit; layout/ZIP interaction remains human-side)
