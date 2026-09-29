@@ -45,11 +45,28 @@
 - [ ] **PROOF-01**: Six milestone notebooks, each calling into `src/` and documenting a milestone with plots (no duplicated logic)
 - [ ] **PROOF-02**: Streamlit dashboard with four pages — thin UI wrapper with sliders/dropdowns calling the same `src/` functions, live-updating charts
 
+## v1.1 Requirements (Milestone: Dashboard Polish)
+
+### Theming & Layout (UI)
+
+- [ ] **UI-01**: Dashboard applies a greenhouse theme via `.streamlit/config.toml` with readable charts in light mode
+- [ ] **UI-03**: Pages use metric cards, tabs, and expanders with mobile-friendly columns
+
+### Export (UI)
+
+- [ ] **UI-02**: Dashboard exports comparison results to disk — scoreboard CSV, chart PNG, and verdict summary downloads (promoted from Deferred)
+- [ ] **UI-07**: Dashboard bundles exports into a one-click ZIP report
+
+### Interactive Analysis (UI)
+
+- [ ] **UI-04**: Controllers page compares two weather scenarios side-by-side on shared sliders
+- [ ] **UI-05**: GA Explorer page lets the user drag MF centers and watch the fuzzy response reshape live (deep-copied MFs, validity-clamped, frozen baseline never mutated)
+- [ ] **UI-06**: GA Explorer page replays convergence generation-by-generation over frozen history (slider scrub; no live evolution)
+
 ## v2 Requirements
 
 ### Deferred
 
-- **UI-02**: Dashboard persists or exports comparison results to disk
 - **FUZZ-07**: Adaptive rule base (beyond fixed 5x5 grid)
 
 ## Out of Scope
@@ -87,6 +104,13 @@
 | METR-02 | Phase 5 | Pending |
 | PROOF-01 | Phase 6 | Pending |
 | PROOF-02 | Phase 7 | Pending |
+| UI-01 | v1.1 Phase TBD | Pending |
+| UI-02 | v1.1 Phase TBD | Pending |
+| UI-03 | v1.1 Phase TBD | Pending |
+| UI-04 | v1.1 Phase TBD | Pending |
+| UI-05 | v1.1 Phase TBD | Pending |
+| UI-06 | v1.1 Phase TBD | Pending |
+| UI-07 | v1.1 Phase TBD | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
