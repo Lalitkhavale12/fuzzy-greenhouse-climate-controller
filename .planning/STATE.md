@@ -3,10 +3,10 @@ gsd_state_version: "1.0"
 milestone: v1.1
 milestone_name: Dashboard Polish
 status: planning
-last_updated: "2026-09-29T03:38:27.859Z"
+last_updated: "2026-09-29T00:00:00.000Z"
 last_activity: 2026-09-29
 progress:
-  total_phases: 0
+  total_phases: 3
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -17,37 +17,75 @@ progress:
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-20)
+See: .planning/PROJECT.md (updated 2026-09-28)
 
-**Core value:** The GA-optimized fuzzy controller must measurably beat both baselines (on/off and PID) on the weighted cost (temperature IAE + humidity IAE + energy) in simulation, reproduced end-to-end from the notebooks.
-
-**Current focus:** Complete — all 7 phases verified. Run the dashboard: `python -m streamlit run dashboard/app.py`.
+**Core value:** The GA-optimized fuzzy controller must measurably beat both baselines (on/off and PID) on the weighted cost (temperature IAE + humidity IAE + energy) in simulation, reproduced end-to-end from the notebooks. (v1.0 met: GA 114.28 rank 1.)
+**Current focus:** v1.1 Dashboard Polish — Phase 8 ready to plan (theme + export foundation)
 
 ## Milestones
 
-_None yet._
+- ✅ v1.0 MVP — Phases 1-7 shipped 2026-09-28
+- 🚧 v1.1 Dashboard Polish — Phases 8-10 (in progress, roadmap created 2026-09-29)
 
 ## Progress
 
 | Phase | Status | Plans | Progress |
 |-------|--------|-------|----------|
-| 1 — Greenhouse Model & Weather | ✅ | 1/1 | 100% |
-| 2 — Baseline Controllers | ✅ | 1/1 | 100% |
-| 3 — Manual Fuzzy Controller | ✅ | 1/1 | 100% |
-| 4 — GA Optimization | ✅ | 1/1 | 100% |
-| 5 — Metrics & Comparison | ✅ | 1/1 | 100% |
-| 6 — Milestone Notebooks | ✅ | 1/1 | 100% |
-| 7 — Streamlit Dashboard | ✅ | 1/1 | 100% |
+| 8 — Theme + Export Foundation | 📋 | 0/TBD | 0% |
+| 9 — Interactive Analysis | 📋 | 0/TBD | 0% |
+| 10 — Layout Polish + Report Bundle | 📋 | 0/TBD | 0% |
 
-## Session
-
-**Last session:** 2026-09-28T15:29:48.620Z
-**Stopped at:** All 7 phases complete — project verified end-to-end
-**Resume file:** none — project complete
+v1.0 archive: Phases 1-7 all ✅ (see ROADMAP.md v1.0 sections).
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 8 of 10 (Theme + Export Foundation)
 Plan: —
-Status: Defining requirements
-Last activity: 2026-09-29 — Milestone v1.1 started
+Status: Ready to plan
+Last activity: 2026-09-29 — v1.1 roadmap created (Phases 8-10, 7/7 UI requirements mapped)
+
+Progress: [░░░░░░░░░░] 0% (v1.1)
+
+## Performance Metrics
+
+**Velocity:**
+- Total plans completed: 7 (v1.0)
+- Average duration: n/a (tracked from v1.1)
+- Total execution time: n/a
+
+**By Phase:**
+
+| Phase | Plans | Total | Avg/Plan |
+|-------|-------|-------|----------|
+| - | - | - | - |
+
+**Recent Trend:**
+- Last 5 plans: v1.0 plans 03-07
+- Trend: Stable
+
+*Updated after each plan completion*
+
+## Accumulated Context
+
+### Decisions
+
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
+
+- [v1.1 roadmap]: 3 phases (8-10) over 7 UI requirements; UI-03 kept whole in Phase 10 (restyle last per research); no thin single-requirement phases
+- [v1.1 research]: zero new installs; all polish code in `dashboard/helpers.py`; `src/`/`results/`/`weather/` read-only; theme first, restyle last
+- [v1.1 scope]: live-weather mode deferred (needs user-supplied API — later milestone)
+
+### Pending Todos
+
+None yet.
+
+### Blockers/Concerns
+
+None yet.
+
+## Session Continuity
+
+Last session: 2026-09-29
+Stopped at: v1.1 roadmap created — awaiting approval, then plan Phase 8
+Resume file: none

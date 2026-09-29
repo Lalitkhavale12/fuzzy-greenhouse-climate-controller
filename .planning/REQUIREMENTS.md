@@ -104,17 +104,20 @@
 | METR-02 | Phase 5 | Pending |
 | PROOF-01 | Phase 6 | Pending |
 | PROOF-02 | Phase 7 | Pending |
-| UI-01 | v1.1 Phase TBD | Pending |
-| UI-02 | v1.1 Phase TBD | Pending |
-| UI-03 | v1.1 Phase TBD | Pending |
-| UI-04 | v1.1 Phase TBD | Pending |
-| UI-05 | v1.1 Phase TBD | Pending |
-| UI-06 | v1.1 Phase TBD | Pending |
-| UI-07 | v1.1 Phase TBD | Pending |
+| UI-01 | Phase 8 | Pending |
+| UI-02 | Phase 8 | Pending |
+| UI-03 | Phase 10 | Pending |
+| UI-04 | Phase 9 | Pending |
+| UI-05 | Phase 9 | Pending |
+| UI-06 | Phase 9 | Pending |
+| UI-07 | Phase 10 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
 - Mapped to phases: 22
+- Unmapped: 0 ✓
+- v1.1 requirements: 7 total (UI-01..UI-07)
+- Mapped to phases: 7 (Phase 8: UI-01, UI-02; Phase 9: UI-04, UI-05, UI-06; Phase 10: UI-03, UI-07)
 - Unmapped: 0 ✓
 
 ---

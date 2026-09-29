@@ -109,4 +109,65 @@ Plans:
 - [x] 07-PLAN.md — 4-page dashboard (Model Sim, Controllers, GA Explorer, Results) + 7-check headless suite, server boot-verified (executed, verified 2026-09-28; 6 review findings fixed in fcbac94)
 
 ---
+
+## Milestones
+
+- ✅ **v1.0 MVP** - Phases 1-7 (shipped 2026-09-28, core value met: GA 114.28 beats both baselines)
+- 🚧 **v1.1 Dashboard Polish** - Phases 8-10 (in progress)
+
+## v1.1 Phases (Dashboard Polish)
+
+**Milestone Goal:** Make the Streamlit dashboard interactive and presentation-grade without touching control logic or frozen artifacts. Zero new installs; one new shared module (`dashboard/helpers.py`) + theme sidecar; `src/`/`results/`/`weather/` read-only.
+
+- [ ] **Phase 8: Theme + Export Foundation** - Greenhouse theme sidecar + export-center byte builders
+- [ ] **Phase 9: Interactive Analysis** - Scenario comparison + MF explorer + GA convergence replay
+- [ ] **Phase 10: Layout Polish + Report Bundle** - KPI-first restyle across all pages + one-click ZIP report
+
+## v1.1 Phase Details
+
+### Phase 8: Theme + Export Foundation
+**Goal**: Dashboard has greenhouse identity and users can take results away as files.
+**Depends on**: Phase 7
+**Requirements**: UI-01, UI-02
+**Success Criteria** (what must be TRUE):
+  1. Dashboard loads with greenhouse theme (green primary, tinted backgrounds) and charts stay readable in light mode
+  2. User can download the scoreboard CSV from the Results page
+  3. User can download the verdict summary (who won and by how much)
+  4. User can download any comparison chart as PNG
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 9: Interactive Analysis
+**Goal**: Users can interrogate the results interactively — different weather, reshaped fuzzy sets, generation-by-generation convergence.
+**Depends on**: Phase 8
+**Requirements**: UI-04, UI-05, UI-06
+**Success Criteria** (what must be TRUE):
+  1. User can pick two weather scenarios and see their traces side-by-side on shared sliders
+  2. A delta table shows ΔIAE/Δenergy/Δcost between the two scenarios (does GA still win?)
+  3. User can drag MF centers and watch the fuzzy response curve reshape live, with reset-to-frozen and validity warnings instead of crashes
+  4. User can scrub a generation slider to replay GA convergence with gen + best-fitness readout
+  5. Dragging MF sliders never mutates the frozen baseline shown elsewhere
+**Plans**: TBD
+**UI hint**: yes
+
+### Phase 10: Layout Polish + Report Bundle
+**Goal**: Every page reads as presentation-grade and examiners leave with one file.
+**Depends on**: Phase 9
+**Requirements**: UI-03, UI-07
+**Success Criteria** (what must be TRUE):
+  1. All four pages show metric-card KPI rows, tabbed T/RH/energy traces, and expanders for provenance
+  2. Layout stacks vertically and stays usable in a narrow/mobile viewport
+  3. User can download one ZIP containing scoreboard CSV + verdict summary + chart PNGs
+**Plans**: TBD
+**UI hint**: yes
+
+## v1.1 Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 8. Theme + Export Foundation | 0/TBD | Not started | - |
+| 9. Interactive Analysis | 0/TBD | Not started | - |
+| 10. Layout Polish + Report Bundle | 0/TBD | Not started | - |
+
+---
 *Roadmap created: 2026-09-20 (inline — gsd-roadmapper not installed)*
