@@ -172,6 +172,40 @@ def test_controllers_helper():
     print("controllers helper: 4 x 1440 on shared weather in %.2fs, GA wins" % dt)
 
 
+def test_scenario_delta():
+    mod = _import_page("02_controllers.py")
+    helpers = _import_helpers()
+    assert mod.resolve_weather(7) == "weather/weather_profile.csv"
+    assert mod.resolve_weather(21) == "weather/holdout_21.csv"
+    runs_a, runs_b, delta_rows = helpers.run_scenario_pair(
+        25.0, 70, 7, 21, mod.run_all_four)
+    for runs in (runs_a, runs_b):
+        assert set(runs) == {"on/off", "PID", "hand fuzzy", "GA fuzzy"}, \
+            set(runs)
+        for name, (T_h, RH_h, U_h) in runs.items():
+            assert len(T_h) == 1440 and len(RH_h) == 1440 and \
+                len(U_h) == 1440, (name, len(T_h))
+    from src.metrics import all_metrics
+    assert [r["controller"] for r in delta_rows] == \
+        ["on/off", "PID", "hand fuzzy", "GA fuzzy"], delta_rows
+    for row in delta_rows:
+        name = row["controller"]
+        ma = all_metrics(*runs_a[name], 25.0, 70)
+        mb = all_metrics(*runs_b[name], 25.0, 70)
+        assert row["d_iae_T"] == mb["iae_T"] - ma["iae_T"], name
+        assert row["d_iae_H"] == mb["iae_H"] - ma["iae_H"], name
+        assert row["d_energy"] == mb["energy"] - ma["energy"], name
+        assert row["d_cost"] == mb["cost"] - ma["cost"], name
+    costs_a = {n: all_metrics(*runs_a[n], 25.0, 70)["cost"] for n in runs_a}
+    costs_b = {n: all_metrics(*runs_b[n], 25.0, 70)["cost"] for n in runs_b}
+    assert costs_a["GA fuzzy"] < costs_a["on/off"], costs_a
+    assert costs_a["GA fuzzy"] < costs_a["PID"], costs_a
+    assert costs_b["GA fuzzy"] < costs_b["on/off"], costs_b
+    assert costs_b["GA fuzzy"] < costs_b["PID"], costs_b
+    print("scenario delta: 2 x 4 x 1440 pair, B-minus-A float-equal, "
+          "GA wins both sides at 7/21")
+
+
 def test_explorer_helper():
     import json
     with open(os.path.join(ROOT, "results/ga_optimized_params.json")) as f:

@@ -22,13 +22,13 @@ import matplotlib.pyplot as plt
 
 import streamlit as st
 
-from src.metrics import run_closed_loop
+from src.metrics import all_metrics, run_closed_loop
 from src.onoff_controller import onoff_step
 from src.pid_controller import pid_step
 from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
-from dashboard.helpers import fig_to_png_bytes
+from dashboard.helpers import fig_to_png_bytes, scenario_delta
 
 NAMES = ["on/off", "PID", "hand fuzzy", "GA fuzzy"]
 
@@ -68,9 +68,24 @@ def run_all_four(T_sp, RH_sp, seed):
 st.title("Controllers — side-by-side on shared weather")
 T_sp = st.slider("T setpoint (degC)", 18.0, 30.0, 25.0, 0.5)
 RH_sp = st.slider("RH setpoint (%)", 50, 90, 70, 1)
-seed = st.slider("weather seed", 1, 50, 21, 1)
+seed_A = st.slider("weather seed A", 1, 50, 7, 1)
+seed_B = st.slider("weather seed B", 1, 50, 21, 1)
 
-hours, runs = run_all_four(T_sp, RH_sp, seed)
+hours_a, runs_a = run_all_four(T_sp, RH_sp, seed_A)
+hours_b, runs_b = run_all_four(T_sp, RH_sp, seed_B)
+delta_rows = scenario_delta(runs_a, runs_b, T_sp, RH_sp)
+st.dataframe(delta_rows)
+costs_a = {n: all_metrics(T, RH, U, T_sp, RH_sp)["cost"]
+           for n, (T, RH, U) in runs_a.items()}
+costs_b = {n: all_metrics(T, RH, U, T_sp, RH_sp)["cost"]
+           for n, (T, RH, U) in runs_b.items()}
+rank_a = sorted(costs_a, key=costs_a.get).index("GA fuzzy") + 1
+rank_b = sorted(costs_b, key=costs_b.get).index("GA fuzzy") + 1
+st.write("GA still wins: side A rank %d / side B rank %d" % (rank_a, rank_b))
+
+# Tracer scaffold: single-side traces on side A only; task 2 replaces this
+# block with the combined paired-trace figure (one st.pyplot, seeds in title).
+hours, runs, seed = hours_a, runs_a, seed_A
 
 fig, ax = plt.subplots(3, 1, figsize=(10, 9), sharex=True)
 fig.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)

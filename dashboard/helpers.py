@@ -13,6 +13,10 @@ Plus build_results_figure: rebuilds the Results scoreboard figure from
 passed-in rows with explicit light-figure colors (the Streamlit theme
 never touches matplotlib). Phase 9/10 compose these primitives.
 
+Phase 09 scenario pair (UI-04): scenario_delta (B-minus-A delta rows via
+locked-weight all_metrics), run_scenario_pair (two run_all_four sides +
+delta rows), build_scenario_figure (paired-trace figure, unclosed).
+
 Threat mitigations (T-08-01/02/03): two hardcoded frozen paths only,
 data carries bytes never a user path, file_name literals live on pages,
 in-memory BytesIO only, zero new deps.
@@ -163,6 +167,41 @@ def build_results_figure(rows):
     _paint_light(fig, ax)
     fig.tight_layout()
     return fig
+
+
+def scenario_delta(side_a, side_b, T_sp=25.0, RH_sp=70.0):
+    """Per-controller B-minus-A deltas between two run_all_four sides.
+
+    side_a/side_b: dict name -> (T_hist, RH_hist, U_hist) as run_all_four
+    returns. Returns list-of-dicts in DISPLAY order with d_iae_T/d_iae_H/
+    d_energy/d_cost (side B minus side A). Locked weights 1.0/1.0/0.01
+    via all_metrics (T-09-02: no user-controlled weights or paths).
+    """
+    from src.metrics import all_metrics
+    rows = []
+    for name in DISPLAY.values():
+        ma = all_metrics(side_a[name][0], side_a[name][1], side_a[name][2],
+                         T_sp, RH_sp)
+        mb = all_metrics(side_b[name][0], side_b[name][1], side_b[name][2],
+                         T_sp, RH_sp)
+        rows.append({"controller": name,
+                     "d_iae_T": mb["iae_T"] - ma["iae_T"],
+                     "d_iae_H": mb["iae_H"] - ma["iae_H"],
+                     "d_energy": mb["energy"] - ma["energy"],
+                     "d_cost": mb["cost"] - ma["cost"]})
+    return rows
+
+
+def run_scenario_pair(T_sp, RH_sp, seed_a, seed_b, runner):
+    """Two cached run_all_four sides plus delta rows (headless seam).
+
+    runner is the cached run_all_four callable (sole sim entry point,
+    called exactly twice so side B never recomputes side A). Returns
+    (runs_a, runs_b, delta_rows).
+    """
+    _, runs_a = runner(T_sp, RH_sp, seed_a)
+    _, runs_b = runner(T_sp, RH_sp, seed_b)
+    return runs_a, runs_b, scenario_delta(runs_a, runs_b, T_sp, RH_sp)
 
 
 if __name__ == "__main__":
