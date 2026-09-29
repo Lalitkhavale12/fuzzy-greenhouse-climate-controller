@@ -29,6 +29,7 @@ import csv
 import io
 import os
 import sys
+import zipfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -48,6 +49,39 @@ ORDER = ["onoff", "pid", "fuzzy", "ga_fuzzy"]
 DISPLAY = {"onoff": "on/off", "pid": "PID",
            "fuzzy": "hand fuzzy", "ga_fuzzy": "GA fuzzy"}
 WEATHERS = ["train-seed7", "holdout-seed21"]
+
+ZIP_MEMBERS = ["comparison.csv", "holdout_verdict.txt",
+               "results_scoreboard.png",
+               "01_greenhouse_model.png", "02_baselines.png", "03_fuzzy.png",
+               "04_ga_optimization.png", "05_comparison.png",
+               "06_final_results.png", "ga_optimized_params.json"]
+
+
+def evidence_zip_bytes():
+    """Assemble the frozen evidence pack in memory (never touches disk).
+
+    Fixed ZIP_MEMBERS flat-basename allowlist (T-10-01), raw rb.read
+    bytes for notebook PNGs + GA JSON (never re-serialized, T-10-03),
+    BytesIO-only with close-then-getvalue (T-10-02). Single on-demand
+    build, no caching (T-10-04: members total under ~2 MB).
+    """
+    with open(SCOREBOARD_PATH, newline="") as f:
+        rows = list(csv.DictReader(f))
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("comparison.csv", scoreboard_csv_bytes())
+        z.writestr("holdout_verdict.txt", verdict_text(rows).encode("utf-8"))
+        z.writestr("results_scoreboard.png",
+                   fig_to_png_bytes(build_results_figure(rows)))
+        for name in ("01_greenhouse_model.png", "02_baselines.png",
+                     "03_fuzzy.png", "04_ga_optimization.png",
+                     "05_comparison.png", "06_final_results.png"):
+            with open(os.path.join(ROOT, "notebooks", name), "rb") as f:
+                z.writestr(name, f.read())
+        with open(os.path.join(ROOT, "results", "ga_optimized_params.json"),
+                  "rb") as f:
+            z.writestr("ga_optimized_params.json", f.read())
+    return buf.getvalue()
 
 
 def scoreboard_csv_bytes(path=SCOREBOARD_PATH):
@@ -361,4 +395,10 @@ if __name__ == "__main__":
     _mpl.use("Agg")  # no-op guard: savefig-to-BytesIO needs no display
     _png = fig_to_png_bytes(build_results_figure(_rows))
     assert _png[:4] == b"\x89PNG" and len(_png) > 1024, len(_png)
-    print("helpers self-check: CSV ==, verdict substrings ok, PNG magic ok")
+    _zip = evidence_zip_bytes()
+    assert _zip[:2] == b"PK" and len(_zip) > 1024, len(_zip)
+    import zipfile as _zf
+    assert _zf.ZipFile(io.BytesIO(_zip)).namelist() == ZIP_MEMBERS, \
+        _zf.ZipFile(io.BytesIO(_zip)).namelist()
+    print("helpers self-check: CSV ==, verdict substrings ok, PNG magic ok, "
+          "ZIP PK + 10 members ok")
