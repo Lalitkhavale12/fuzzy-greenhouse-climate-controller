@@ -9,6 +9,7 @@ files; every other seed generates to an ephemeral tempfile path.
 Run:  python -m streamlit run dashboard/app.py
 """
 
+import csv
 import functools
 import os
 import sys
@@ -21,14 +22,14 @@ import numpy as np
 
 import streamlit as st
 
-from src.metrics import all_metrics, run_closed_loop
+from src.metrics import COLUMNS, all_metrics, run_closed_loop
 from src.onoff_controller import onoff_step
 from src.pid_controller import pid_step
 from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
 from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
-    scenario_delta
+    scenario_delta, holdout_ranking, DISPLAY, build_controller_trace_figure
 
 
 def resolve_weather(seed):
@@ -64,6 +65,19 @@ def run_all_four(T_sp, RH_sp, seed):
 
 
 st.title("Controllers — side-by-side on shared weather")
+
+with open("results/comparison.csv") as _f:
+    _rows = list(csv.DictReader(_f))
+assert list(_rows[0].keys()) == COLUMNS, "stale artifact: header != COLUMNS"
+assert len(_rows) == 8, "expected 4 controllers x 2 weathers"
+kpi = next(r for r in holdout_ranking(_rows) if r["controller"] == "ga_fuzzy")
+c1, c2, c3, c4 = st.columns(4)
+c1.metric("%s holdout cost" % DISPLAY["ga_fuzzy"],
+          "%.2f" % float(kpi["cost"]))
+c2.metric("%s holdout rank" % DISPLAY["ga_fuzzy"], "#%s" % kpi["rank"])
+c3.metric("IAE_T", "%.2f" % float(kpi["iae_T"]))
+c4.metric("IAE_H", "%.2f" % float(kpi["iae_H"]))
+
 T_sp = st.slider("T setpoint (degC)", 18.0, 30.0, 25.0, 0.5)
 RH_sp = st.slider("RH setpoint (%)", 50, 90, 70, 1)
 seed_A = st.slider("weather seed A", 1, 50, 7, 1)
@@ -88,4 +102,19 @@ fig = build_scenario_figure(hours_a, runs_a, runs_b, T_sp, RH_sp,
                             seed_A, seed_B)
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="controllers_traces.png", mime="image/png")
-st.pyplot(fig)
+tT, tH, tE = st.tabs(["Temperature", "Humidity", "Energy"])
+with tT:
+    st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
+                                            RH_sp, seed_A, seed_B, "T"))
+with tH:
+    st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
+                                            RH_sp, seed_A, seed_B, "RH"))
+with tE:
+    st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
+                                            RH_sp, seed_A, seed_B, "energy"))
+
+with st.expander("Provenance"):
+    st.write("Controllers rerun the src closed loops live on shared weather "
+             "(seeds 7/21 resolve to frozen files, other seeds ephemeral). "
+             "Scoreboard: results/comparison.csv (8 rows, frozen). "
+             "Seeds 7/21, weights 1.0/1.0/0.01.")

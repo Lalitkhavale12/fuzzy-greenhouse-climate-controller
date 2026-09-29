@@ -281,6 +281,49 @@ def build_scenario_figure(hours, runs_a, runs_b, T_sp, RH_sp, seed_a, seed_b):
     return fig
 
 
+def build_controller_trace_figure(hours, runs_a, runs_b, T_sp, RH_sp,
+                                  seed_a, seed_b, group):
+    """Single-signal paired traces: side A/B columns for one group (unclosed).
+
+    Controllers-page tab body (T/RH/energy): the same traces as
+    build_scenario_figure, one signal per figure so each tab stacks cleanly
+    in narrow viewports. group in ("T", "RH", "energy"); "energy" plots
+    heater duty (the energy proxy). The page serializes with fig_to_png_bytes
+    and shows with a single full-width st.pyplot per tab.
+    """
+    if group not in ("T", "RH", "energy"):
+        raise ValueError("trace group must be T/RH/energy, got %r" % (group,))
+    fig, ax = plt.subplots(1, 2, figsize=(12, 4), sharex=True)
+    sides = (("A", seed_a, runs_a), ("B", seed_b, runs_b))
+    for j, (side, seed, runs) in enumerate(sides):
+        for name in DISPLAY.values():
+            T_h, RH_h, U_h = runs[name]
+            if group == "T":
+                ax[j].plot(hours, T_h, label=name, linewidth=1.2)
+            elif group == "RH":
+                ax[j].plot(hours, RH_h, label=name, linewidth=1.2)
+            else:
+                ax[j].plot(hours, [u["heater"] for u in U_h], label=name,
+                           linewidth=1.2)
+        if group == "T":
+            ax[j].axhline(T_sp, color="k", linestyle="--", linewidth=0.8)
+            ax[j].set_ylabel("T (degC)")
+        elif group == "RH":
+            ax[j].axhline(RH_sp, color="k", linestyle="--", linewidth=0.8)
+            ax[j].set_ylabel("RH (%)")
+        else:
+            ax[j].set_ylabel("heater duty")
+        ax[j].set_xlabel("hour of day")
+        ax[j].set_title("side %s (seed %d) %s" % (side, seed, group))
+        ax[j].legend(fontsize=8)
+        ax[j].grid(alpha=0.3)
+    fig.suptitle("Controllers %s traces -- side A (seed %d) vs B (seed %d)"
+                 % (group, seed_a, seed_b))
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
 def scratch_mfs_from_deltas(eT_centers, du_centers, eps=1e-3):
     """Hand MFs deep-copied with dragged eT/du centers, neighbor-clamped."""
     from src.fuzzy_controller import FUZZY_MFS
