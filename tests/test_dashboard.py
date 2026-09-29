@@ -77,6 +77,23 @@ def _stub_streamlit():
     _sys.modules["streamlit"] = _Stub()
 
 
+def _import_helpers():
+    import importlib.util
+    import sys as _sys
+    _stub_streamlit()
+    import matplotlib as _mpl
+    _mpl.use("Agg")  # headless figure construction; helpers must not set this
+    if ROOT not in _sys.path:
+        _sys.path.insert(0, ROOT)
+    os.chdir(ROOT)
+    path = os.path.join(ROOT, "dashboard", "helpers.py")
+    spec = importlib.util.spec_from_file_location("dash_helpers", path)
+    mod = importlib.util.module_from_spec(spec)
+    _sys.modules["dash_helpers"] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def _import_page(fname):
     import importlib.util
     import sys as _sys
@@ -220,6 +237,66 @@ def test_artifacts_untouched():
     tracked = [ln for ln in out.splitlines() if not ln.startswith("??")]
     assert not tracked, tracked
     print("results/ + weather/ tracked artifacts untouched")
+
+
+def test_export_scoreboard_csv():
+    helpers = _import_helpers()
+    raw = helpers.scoreboard_csv_bytes()
+    with open(os.path.join(ROOT, "results/comparison.csv"), "rb") as f:
+        frozen = f.read()
+    assert raw == frozen, "CSV download bytes must equal the frozen artifact"
+    from src.metrics import COLUMNS
+    assert raw.splitlines()[0].decode("utf-8").split(",") == COLUMNS, \
+        "CSV header != COLUMNS"
+    print("export csv: byte-identical to results/comparison.csv, header == COLUMNS")
+
+
+def test_export_chart_png():
+    helpers = _import_helpers()
+    mod = _import_page("04_results.py")
+    rows = mod.load_scoreboard()
+    png = helpers.fig_to_png_bytes(helpers.build_results_figure(rows))
+    assert png[:4] == b"\x89PNG", png[:8]
+    assert len(png) > 1024, len(png)
+    print("export png: 89 50 4E 47 magic, %d bytes" % len(png))
+
+
+def test_export_verdict():
+    helpers = _import_helpers()
+    mod = _import_page("04_results.py")
+    text = helpers.verdict_text(mod.load_scoreboard())
+    for s in ("ga_fuzzy", "holdout", "iae_T", "iae_H", "energy",
+              "train_seed", "holdout_seed", "7", "21", "1.0/1.0/0.01"):
+        assert s in text, s
+    for c in ("onoff", "pid", "fuzzy", "ga_fuzzy"):
+        assert c in text, c
+    print("export verdict: winner+margins+per-term+seeds/weights present")
+
+
+def test_export_wiring():
+    pages = {}
+    for fname in os.listdir(PAGES_DIR):
+        if fname.endswith(".py"):
+            with open(os.path.join(PAGES_DIR, fname)) as f:
+                pages[fname] = f.read()
+    expect = {
+        "04_results.py": [("comparison.csv", "text/csv"),
+                          ("holdout_verdict.txt", "text/plain"),
+                          ("results_scoreboard.png", "image/png")],
+        "01_model_sim.py": [("model_sim_chart.png", "image/png")],
+        "02_controllers.py": [("controllers_traces.png", "image/png")],
+        "03_ga_explorer.py": [("ga_convergence.png", "image/png"),
+                              ("ga_mfs.png", "image/png")],
+    }
+    total = 0
+    for fname, pairs in expect.items():
+        src = pages[fname]
+        for name, mime in pairs:
+            assert name in src, (fname, name)
+            assert mime in src, (fname, mime)
+        total += src.count("download_button")
+    assert total == 7, total
+    print("export wiring: 7 download buttons with filenames+MIME across pages")
 
 
 if __name__ == "__main__":
