@@ -28,6 +28,7 @@ from src.pid_controller import pid_step
 from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
+from dashboard.helpers import fig_to_png_bytes
 
 NAMES = ["on/off", "PID", "hand fuzzy", "GA fuzzy"]
 
@@ -72,6 +73,10 @@ seed = st.slider("weather seed", 1, 50, 21, 1)
 hours, runs = run_all_four(T_sp, RH_sp, seed)
 
 fig, ax = plt.subplots(3, 1, figsize=(10, 9), sharex=True)
+fig.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)
+for _a in ax:
+    _a.set_facecolor("#FFFFFF")  # explicit light axes, default C-series data colors
+    _a.tick_params(colors="#263023")
 for name in NAMES:
     T_h, RH_h, U_h = runs[name]
     ax[0].plot(hours, T_h, label=name, linewidth=1.2)
@@ -96,4 +101,6 @@ ax[2].grid(alpha=0.3)
 fig.suptitle("Closed-loop traces (T_sp %.1f C, RH_sp %d %%, seed %d)"
              % (T_sp, RH_sp, seed))
 fig.tight_layout()
+st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
+                   file_name="controllers_traces.png", mime="image/png")
 st.pyplot(fig)

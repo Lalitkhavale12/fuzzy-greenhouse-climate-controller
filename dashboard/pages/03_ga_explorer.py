@@ -22,6 +22,7 @@ import streamlit as st
 
 from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
+from dashboard.helpers import fig_to_png_bytes
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -50,6 +51,9 @@ st.dataframe([{"population": d["population"], "generations": d["generations"],
 
 st.subheader("Convergence (50 generations)")
 fig, ax = plt.subplots(figsize=(10, 4))
+fig.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)
+ax.set_facecolor("#FFFFFF")  # explicit light axes, default C-series data colors
+ax.tick_params(colors="#263023")
 gens = range(1, len(best) + 1)
 ax.plot(gens, best, label="best")
 ax.plot(gens, mean, label="mean", alpha=0.7)
@@ -60,6 +64,8 @@ ax.set_title("GA convergence (%dx%d, train seed-%d)"
 ax.legend()
 ax.grid(alpha=0.3)
 fig.tight_layout()
+st.download_button("Download convergence chart (PNG)", data=fig_to_png_bytes(fig),
+                   file_name="ga_convergence.png", mime="image/png")
 st.pyplot(fig)
 
 st.subheader("Membership before/after: hand solid vs GA dashed")
@@ -67,6 +73,10 @@ MF_KEYS = ["eT", "eH"]
 extra = st.selectbox("extra group", ["deT", "du", "deH", "dv"], index=0)
 MF_KEYS = MF_KEYS + [extra]
 fig2, axes = plt.subplots(1, 3, figsize=(15, 4))
+fig2.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)
+for _a in axes:
+    _a.set_facecolor("#FFFFFF")  # explicit light axes, default C-series data colors
+    _a.tick_params(colors="#263023")
 for a, key in zip(axes, MF_KEYS):
     hand_c = FUZZY_MFS[key]["centers"]
     hand_w = FUZZY_MFS[key]["widths"]
@@ -87,4 +97,6 @@ for a, key in zip(axes, MF_KEYS):
 fig2.suptitle("coupling k_heat/k_vent = %.3f/%.3f"
               % (gains_opt["k_heat"], gains_opt["k_vent"]))
 fig2.tight_layout()
+st.download_button("Download MF chart (PNG)", data=fig_to_png_bytes(fig2),
+                   file_name="ga_mfs.png", mime="image/png")
 st.pyplot(fig2)

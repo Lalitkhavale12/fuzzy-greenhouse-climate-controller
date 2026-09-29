@@ -21,6 +21,7 @@ import streamlit as st
 
 from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
 from src.weather_profile_generator import generate_weather_profile
+from dashboard.helpers import fig_to_png_bytes
 
 T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
 
@@ -67,6 +68,10 @@ st.metric("inside T range", "[%.2f, %.2f] degC" % (min(T_trace), max(T_trace)))
 st.metric("RH range", "[%.1f, %.1f] %%" % (min(rh_trace), max(rh_trace)))
 
 fig, ax = plt.subplots(3, 1, figsize=(10, 9))
+fig.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)
+for _a in ax:
+    _a.set_facecolor("#FFFFFF")  # explicit light axes, default C-series data colors
+    _a.tick_params(colors="#263023")
 ax[0].plot(hours, T_trace, label="inside T")
 ax[0].plot(hours, T_out_hr, label="outdoor T", linestyle="--")
 ax[0].set_ylabel("Temperature (degC)")
@@ -82,4 +87,6 @@ ax[2].set_ylabel("RH (%)")
 ax[2].grid(alpha=0.3)
 fig.suptitle("Simulated greenhouse plant - 24h open-loop (slider duties)")
 fig.tight_layout()
+st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
+                   file_name="model_sim_chart.png", mime="image/png")
 st.pyplot(fig)
