@@ -62,6 +62,10 @@ def _stub_streamlit():
                     except Exception:
                         return None
                 return sb
+            if name == "download_button":
+                def dl(label, *a, **k):
+                    return None
+                return dl
 
             def _noop(*a, **k):
                 return None
