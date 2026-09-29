@@ -185,15 +185,15 @@ Plans:
 Plans:
 **Wave 1**
 
-- [ ] 09-01-PLAN.md — scenario A/B tracer: pair helpers + dual-seed 02 wiring + delta test
+- [x] 09-01-PLAN.md — scenario A/B tracer: pair helpers + dual-seed 02 wiring + delta test
 
 **Wave 2** *(blocked on Wave 1 completion)*
 
-- [ ] 09-02-PLAN.md — MF explorer: scratch/sweep/overlay helpers + 10-slider 03 wiring
+- [x] 09-02-PLAN.md — MF explorer: scratch/sweep/overlay helpers + 10-slider 03 wiring
 
 **Wave 3** *(blocked on Wave 2 completion)*
 
-- [ ] 09-03-PLAN.md — convergence replay: slice/marker helpers + gen-slider 03 wiring
+- [x] 09-03-PLAN.md — convergence replay: slice/marker helpers + gen-slider 03 wiring (executed, verified 2026-09-29; 7 review findings fixed in 796bfde)
 
 **UI hint**: yes
 
