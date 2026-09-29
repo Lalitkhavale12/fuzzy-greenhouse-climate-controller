@@ -22,7 +22,8 @@ import streamlit as st
 
 from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
-from dashboard.helpers import fig_to_png_bytes
+from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
+    tloop_response_curve, build_explorer_figure
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -48,6 +49,39 @@ st.metric("coupling k_vent", "%.3f" % d["coupling"]["k_vent"])
 st.dataframe([{"population": d["population"], "generations": d["generations"],
                "train_seed": d["train_seed"], "holdout_seed": d["holdout_seed"],
                "weights": str(d["weights"])}])
+
+st.subheader("MF explorer: drag T-loop centers (scratch vs frozen)")
+hand_eT = [float(c) for c in FUZZY_MFS["eT"]["centers"]]
+hand_du = [float(c) for c in FUZZY_MFS["du"]["centers"]]
+eT_gap = float(min(np.diff(sorted(hand_eT))) / 2.0)
+du_gap = float(min(np.diff(sorted(hand_du))) / 2.0)
+ecols = st.columns(2)
+eT_vals = [ecols[0].slider("eT[%d] center" % i, c - eT_gap, c + eT_gap, c, 0.1)
+           for i, c in enumerate(hand_eT)]
+du_vals = [ecols[1].slider("du[%d] center" % i, c - du_gap, c + du_gap, c, 0.005)
+           for i, c in enumerate(hand_du)]
+reset = st.button("Reset to frozen")
+if reset:  # in-memory only: recompute from hand centers, never touch disk
+    eT_vals = list(hand_eT)
+    du_vals = list(hand_du)
+scratch, drag_warnings = scratch_mfs_from_deltas(eT_vals, du_vals)
+for _w in drag_warnings:
+    st.warning(_w)
+grid, hand_vals = tloop_response_curve(FUZZY_MFS)
+_, scratch_vals = tloop_response_curve(scratch)
+if not (bool(np.all(np.isfinite(hand_vals)))
+        and bool(np.all(np.isfinite(scratch_vals)))):
+    st.warning("response sweep non-finite -- showing curves as computed")
+dev_max = float(np.abs(scratch_vals - hand_vals).max())
+dev_mean = float(np.abs(scratch_vals - hand_vals).mean())
+st.metric("surface deviation max-abs (duty units, not closed-loop cost)",
+          "%.4f" % dev_max)
+st.metric("surface deviation mean-abs (duty units)", "%.4f" % dev_mean)
+fig3 = build_explorer_figure(grid, hand_vals, scratch_vals)
+st.download_button("Download explorer response (PNG)",
+                   data=fig_to_png_bytes(fig3),
+                   file_name="ga_explorer_response.png", mime="image/png")
+st.pyplot(fig3)
 
 st.subheader("Convergence (50 generations)")
 fig, ax = plt.subplots(figsize=(10, 4))

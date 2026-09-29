@@ -411,7 +411,8 @@ def test_export_wiring():
         "01_model_sim.py": [("model_sim_chart.png", "image/png")],
         "02_controllers.py": [("controllers_traces.png", "image/png")],
         "03_ga_explorer.py": [("ga_convergence.png", "image/png"),
-                              ("ga_mfs.png", "image/png")],
+                              ("ga_mfs.png", "image/png"),
+                              ("ga_explorer_response.png", "image/png")],
     }
     total = 0
     for fname, pairs in expect.items():
@@ -420,8 +421,8 @@ def test_export_wiring():
             assert name in src, (fname, name)
             assert mime in src, (fname, mime)
         total += src.count("download_button")
-    assert total == 7, total
-    print("export wiring: 7 download buttons with filenames+MIME across pages")
+    assert total == 8, total
+    print("export wiring: 8 download buttons with filenames+MIME across pages")
 
 
 if __name__ == "__main__":
