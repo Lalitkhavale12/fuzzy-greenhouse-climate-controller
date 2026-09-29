@@ -299,6 +299,36 @@ def build_explorer_figure(grid, hand_vals, scratch_vals):
     return fig
 
 
+def replay_slice(gen, history_best, history_mean):
+    """1-based gen -> (gen, best_val, mean_val). Pure clamp-and-index.
+
+    Stateless scrubber over the frozen len-50 history arrays (D-03):
+    no recompute, no timers, no training imports. Out-of-range headless
+    calls clamp to 1-50 (T-09-09); the page slider is int-only 1-50.
+    """
+    g = int(max(1, min(50, gen)))
+    return g, float(history_best[g - 1]), float(history_mean[g - 1])
+
+
+def build_replay_figure(best, mean, gen):
+    """Convergence plot with a dashed vertical marker at gen (unclosed)."""
+    g = int(max(1, min(50, gen)))
+    fig, ax = plt.subplots(figsize=(10, 4))
+    gens = range(1, len(best) + 1)
+    ax.plot(gens, best, label="best")
+    ax.plot(gens, mean, label="mean", alpha=0.7)
+    ax.axvline(g, color="k", linestyle="--", linewidth=0.8)
+    ax.set_xlabel("generation")
+    ax.set_ylabel("train weighted cost")
+    ax.set_title("GA convergence replay -- gen %d/50, best %.2f"
+                 % (g, float(best[g - 1])))
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
 if __name__ == "__main__":
     with open(SCOREBOARD_PATH) as _f:
         _rows = list(csv.DictReader(_f))

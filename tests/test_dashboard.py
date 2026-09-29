@@ -317,6 +317,40 @@ def test_scratch_clamp():
     print("scratch clamp: %d warning(s), ordered centers, no raise" % len(warns))
 
 
+def test_replay_slice():
+    import inspect
+    import json
+    helpers = _import_helpers()
+    with open(os.path.join(ROOT, "results/ga_optimized_params.json")) as f:
+        d = json.load(f)
+    assert d["schema_version"] == 2, "stale artifact: schema_version != 2"
+    best = d["history"]["best"]
+    mean = d["history"]["mean"]
+    assert len(best) == 50 and len(mean) == 50, (len(best), len(mean))
+    for g in (1, 25, 50):
+        gg, b, m = helpers.replay_slice(g, best, mean)
+        assert gg == g, (gg, g)
+        assert b == float(best[g - 1]), (g, b)
+        assert m == float(mean[g - 1]), (g, m)
+        readout = "gen %d/50 \u00b7 best %.2f" % (gg, b)
+        assert readout == "gen %d/50 \u00b7 best %s" % (g, "%.2f" % b), readout
+        fig = helpers.build_replay_figure(best, mean, g)
+        title = fig.axes[0].get_title()
+        assert ("gen %d/50" % g) in title, title
+        assert ("%.2f" % b) in title, title
+        lines = fig.axes[0].get_lines()
+        assert len(lines) == 3, len(lines)  # best + mean + gen marker
+    assert helpers.replay_slice(0, best, mean)[0] == 1, "clamp lo"
+    assert helpers.replay_slice(99, best, mean)[0] == 50, "clamp hi"
+    probe = (inspect.getsource(helpers.replay_slice)
+             + inspect.getsource(helpers.build_replay_figure))
+    for bad in ("genetic_algorithm", "evolve", "run_ga", "run_closed_loop",
+                "all_metrics", "weighted_cost"):
+        assert bad not in probe, ("replay path", bad)
+    print("replay slice: exact at 1/25/50, readout + title carry gen/best, "
+          "clamped, no recompute kernels")
+
+
 def test_source_audits():
     import re
     pages = {}
