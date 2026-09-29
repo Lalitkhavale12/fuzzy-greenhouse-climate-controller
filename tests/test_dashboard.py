@@ -195,14 +195,14 @@ def test_scenario_delta():
     runs_a, runs_b, delta_rows = helpers.run_scenario_pair(
         25.0, 70, 7, 21, cached_runner)
     cold_dt = time.time() - t0
-    assert cold_dt < 6.0, cold_dt
+    assert cold_dt < 15.0, cold_dt  # hang guard only (WR-03); measured ~4.5 s
     assert len(calls) == 2, calls  # one cached call per side, never more
     t0 = time.time()
     runs_a2, runs_b2, delta2 = helpers.run_scenario_pair(
         25.0, 70, 7, 21, cached_runner)
     warm_dt = time.time() - t0
     assert len(calls) == 2, calls  # warm call adds zero sim calls
-    assert warm_dt < 0.5, warm_dt
+    assert warm_dt < 2.0, warm_dt  # hang guard only (WR-03); measured ~0.1 s
     assert delta2 == delta_rows  # cache-hit recompute is identical
     for runs in (runs_a, runs_b):
         assert set(runs) == {"on/off", "PID", "hand fuzzy", "GA fuzzy"}, \

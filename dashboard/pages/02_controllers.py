@@ -69,6 +69,9 @@ RH_sp = st.slider("RH setpoint (%)", 50, 90, 70, 1)
 seed_A = st.slider("weather seed A", 1, 50, 7, 1)
 seed_B = st.slider("weather seed B", 1, 50, 21, 1)
 
+# Intentional inline pair (IN-04): run_scenario_pair drops `hours`, which the
+# paired-trace figure below needs — so the page calls cached run_all_four
+# twice directly (cache keyed per side, same primitive, no drift).
 hours_a, runs_a = run_all_four(T_sp, RH_sp, seed_A)
 hours_b, runs_b = run_all_four(T_sp, RH_sp, seed_B)
 delta_rows = scenario_delta(runs_a, runs_b, T_sp, RH_sp)

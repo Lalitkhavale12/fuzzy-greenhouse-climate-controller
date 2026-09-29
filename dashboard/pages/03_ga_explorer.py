@@ -24,7 +24,7 @@ from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
-    build_replay_figure
+    build_replay_figure, GEN_COUNT
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -61,8 +61,10 @@ eT_vals = [ecols[0].slider("eT[%d] center" % i, c - eT_gap, c + eT_gap, c, 0.1)
            for i, c in enumerate(hand_eT)]
 du_vals = [ecols[1].slider("du[%d] center" % i, c - du_gap, c + du_gap, c, 0.005)
            for i, c in enumerate(hand_du)]
-reset = st.button("Reset to frozen")
-if reset:  # in-memory only: recompute from hand centers, never touch disk
+reset = st.button("Preview frozen this render")
+if reset:  # one-render preview (WR-02): recompute scratch from hand centers
+    # for this render only — sliders keep their values (no session_state
+    # by lock), so dragged values flow back on the next rerun.
     eT_vals = list(hand_eT)
     du_vals = list(hand_du)
 scratch, drag_warnings = scratch_mfs_from_deltas(eT_vals, du_vals)
@@ -104,9 +106,9 @@ st.download_button("Download convergence chart (PNG)", data=fig_to_png_bytes(fig
 st.pyplot(fig)
 
 st.subheader("Convergence replay (scrub generations)")
-gen = st.slider("generation", 1, 50, 50, 1)
-g, g_best, g_mean = replay_slice(gen, best, mean)
-st.metric("replay readout", "gen %d/50 \u00b7 best %.2f" % (g, g_best))
+gen = st.slider("generation", 1, GEN_COUNT, GEN_COUNT, 1)
+g, g_best, _g_mean = replay_slice(gen, best, mean)  # mean shown in figure
+st.metric("replay readout", "gen %d/%d \\u00b7 best %.2f" % (g, GEN_COUNT, g_best))
 fig_r = build_replay_figure(best, mean, g)
 st.download_button("Download replay chart (PNG)", data=fig_to_png_bytes(fig_r),
                    file_name="ga_convergence_replay.png", mime="image/png")

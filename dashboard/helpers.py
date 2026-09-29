@@ -254,7 +254,8 @@ def scratch_mfs_from_deltas(eT_centers, du_centers, eps=1e-3):
     warnings = []
     for key, vals in (("eT", eT_centers), ("du", du_centers)):
         vals = [float(v) for v in vals]
-        assert len(vals) == 5, (key, len(vals))
+        if len(vals) != 5:
+            raise ValueError("%s needs 5 centers, got %d" % (key, len(vals)))
         hand = [float(c) for c in scratch[key]["centers"]]
         clamped = []
         for i, v in enumerate(vals):
@@ -262,13 +263,28 @@ def scratch_mfs_from_deltas(eT_centers, du_centers, eps=1e-3):
                 warnings.append("%s[%d] non-finite input, kept hand %.4g"
                                 % (key, i, hand[i]))
                 v = hand[i]
-            lo = clamped[-1] + eps if i > 0 else -np.inf
-            hi = vals[i + 1] - eps if i < 4 else np.inf
-            c = min(max(v, lo), hi)
-            if c != v:
-                warnings.append("%s[%d] clamped to %.4g (neighbor bound)"
-                                % (key, i, c))
-            clamped.append(c)
+            clamped.append(v)
+        # fixed-point neighbor ordering (WR-01): iterate forward+backward
+        # passes against already-clamped neighbors until nothing moves, so
+        # even fully-reversed headless input lands strictly increasing.
+        for _ in range(len(clamped)):
+            changed = False
+            for i in range(1, 5):  # forward: c[i] > c[i-1] + eps
+                lo = clamped[i - 1] + eps
+                if clamped[i] < lo:
+                    clamped[i] = lo
+                    changed = True
+                    warnings.append("%s[%d] clamped to %.4g (neighbor bound)"
+                                    % (key, i, lo))
+            for i in range(3, -1, -1):  # backward: c[i] < c[i+1] - eps
+                hi = clamped[i + 1] - eps
+                if clamped[i] > hi:
+                    clamped[i] = hi
+                    changed = True
+                    warnings.append("%s[%d] clamped to %.4g (neighbor bound)"
+                                    % (key, i, hi))
+            if not changed:
+                break
         scratch[key]["centers"] = np.array(clamped, dtype=float)
     return scratch, warnings
 
@@ -299,6 +315,9 @@ def build_explorer_figure(grid, hand_vals, scratch_vals):
     return fig
 
 
+GEN_COUNT = 50  # frozen artifact generation count (IN-03: single source)
+
+
 def replay_slice(gen, history_best, history_mean):
     """1-based gen -> (gen, best_val, mean_val). Pure clamp-and-index.
 
@@ -306,7 +325,7 @@ def replay_slice(gen, history_best, history_mean):
     no recompute, no timers, no training imports. Out-of-range headless
     calls clamp to 1-50 (T-09-09); the page slider is int-only 1-50.
     """
-    g = int(max(1, min(50, gen)))
+    g = int(max(1, min(GEN_COUNT, gen)))
     return g, float(history_best[g - 1]), float(history_mean[g - 1])
 
 
