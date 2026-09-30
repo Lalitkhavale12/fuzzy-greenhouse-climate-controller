@@ -15,9 +15,19 @@ os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 
+from dashboard.helpers import DISPLAY, load_kpi_row
+
 st.set_page_config(page_title="Fuzzy Greenhouse Climate Controller", layout="wide")
 
 st.title("GA-Optimized Fuzzy Greenhouse Climate Controller")
+try:
+    kpi = load_kpi_row()
+    st.success("Headline: %s ranks #1 on the frozen holdout — weighted cost "
+               "%.2f (IAE_T %.2f, IAE_H %.2f), beating on/off and PID."
+               % (DISPLAY["ga_fuzzy"], float(kpi["cost"]),
+                  float(kpi["iae_T"]), float(kpi["iae_H"])))
+except (OSError, ValueError, AssertionError, KeyError):
+    st.warning("Frozen scoreboard unreadable — pages will report the fault.")
 st.markdown(
     "Thin UI wrapper over the finished `src/` library — no new control "
     "logic, no recomputation of frozen artifacts.\n\n"
@@ -28,5 +38,7 @@ st.markdown(
     "- **GA Explorer** — convergence + membership before/after from the "
     "frozen `results/ga_optimized_params.json` artifact.\n"
     "- **Results** — frozen `results/comparison.csv` scoreboard + verdict, "
-    "instant and always consistent with Phase 5."
+    "instant and always consistent with Phase 5.\n"
+    "- **Plant House** — 3D greenhouse with live crop-health from the real "
+    "closed loop."
 )

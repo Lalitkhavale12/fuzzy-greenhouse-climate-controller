@@ -132,7 +132,11 @@ if st.checkbox("Run sensitivity (10 closed-loop runs, cached)"):
     sens_base, sens_rows = mf_sensitivity_costs()
     st.metric("hand-fuzzy baseline cost (seed 7)", "%.2f" % sens_base)
     st.dataframe([{"param": lab, "dcost": dc} for lab, dc in sens_rows])
-    st.pyplot(build_sensitivity_figure(sens_rows))
+    sens_fig = build_sensitivity_figure(sens_rows)
+    st.download_button("Download sensitivity (PNG)",
+                       data=fig_to_png_bytes(sens_fig),
+                       file_name="ga_sensitivity.png", mime="image/png")
+    st.pyplot(sens_fig)
 
 st.subheader("Membership before/after: hand solid vs GA dashed")
 MF_KEYS = ["eT", "eH"]

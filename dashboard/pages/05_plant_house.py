@@ -24,6 +24,7 @@ from src.pid_controller import pid_step
 from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.metrics import run_closed_loop
+from src.greenhouse_model import daytime_solar, params
 from dashboard.helpers import DISPLAY, load_kpi_row, ephemeral_weather_path
 
 STEPS = {"onoff": onoff_step, "pid": pid_step,
@@ -137,6 +138,12 @@ healths = plant_healths(Tmean, RHmean, T_sp, RH_sp, grid_x, 10.0)
 st.metric("mean crop health", "%.2f" % float(np.mean(healths)),
           "inside [%.1f, %.1f] C, [%.0f, %.0f] %%RH"
           % (min(T_hist), max(T_hist), min(RH_hist), max(RH_hist)))
+st.metric("solar at hour %d" % int(hour), "%.0f W/m2"
+          % daytime_solar(float(hour), params["A_sol"]))
+pick = st.selectbox("inspect plant", list(range(1, 13)), index=0,
+                    format_func=lambda i: "plant %d" % i) - 1
+st.metric("plant %d health" % (pick + 1), "%.2f" % healths[pick],
+          "x = %.1f m (vent-to-wall gradient)" % grid_x[pick])
 st.plotly_chart(greenhouse_figure(healths, hour), use_container_width=True)
 
 with st.expander("Provenance"):

@@ -462,29 +462,37 @@ def build_replay_figure(best, mean, gen):
 _EPH_DIR = None
 
 
-def ephemeral_weather_path(seed):
+def ephemeral_weather_path(seed, tag=""):
     """Synthetic weather path inside one shared temp dir (no per-seed leak)."""
     global _EPH_DIR
     from src.weather_profile_generator import generate_weather_profile
     import tempfile
     if _EPH_DIR is None:
         _EPH_DIR = tempfile.mkdtemp(prefix="gh_weather_")
-    path = os.path.join(_EPH_DIR, "seed_%d.csv" % int(seed))
+    path = os.path.join(_EPH_DIR, "seed_%d%s.csv" % (int(seed), tag))
     if not os.path.exists(path):
         generate_weather_profile(path, seed=int(seed))
     return path
 
 
-def build_overlay_figure(hours, t_hists, T_sp):
-    """All-controller T traces on shared axes + setpoint dashed (no recompute)."""
+def build_overlay_figure(hours, t_hists, T_sp, series="T"):
+    """All-controller traces on shared axes + setpoint dashed (no recompute).
+
+    series="T" plots inside temperature vs T_sp; series="RH" plots relative
+    humidity with a dashed 70%%-style reference passed as T_sp.
+    """
     fig, ax = plt.subplots(figsize=(10, 4))
     for name in t_hists:
         ax.plot(hours, t_hists[name], label=name)
     ax.axhline(float(T_sp), color="k", linestyle="--", linewidth=1,
                label="setpoint")
+    if series == "RH":
+        ax.set_ylabel("inside RH (%)")
+        ax.set_title("All four controllers — humidity, one axes")
+    else:
+        ax.set_ylabel("inside T (degC)")
+        ax.set_title("All four controllers — one axes (does GA hold the line?)")
     ax.set_xlabel("hour of day")
-    ax.set_ylabel("inside T (degC)")
-    ax.set_title("All four controllers — one axes (does GA hold the line?)")
     ax.legend(fontsize=8)
     ax.grid(alpha=0.3)
     _paint_light(fig, ax)
@@ -535,6 +543,95 @@ def build_sensitivity_figure(rows):
     ax.set_xlabel("delta closed-loop cost vs hand baseline")
     ax.set_title("MF sensitivity: which center shift hurts/helps most")
     ax.grid(alpha=0.3, axis="x")
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
+def robustness_table(T_sp=25.0, RH_sp=70.0, n=1440):
+    """5 controllers x 5 scenarios -> cost + T-actuator saturation rows.
+
+    Scenarios: frozen seed 7, frozen holdout 21, synthetic seed 13,
+    heatwave (+6 C mean) and coldsnap (-6 C mean) off seed 7. Saturation =
+    % steps with heater or fan_cooler pinned >= 0.99.
+    """
+    import functools
+    from src.onoff_controller import onoff_step
+    from src.pid_controller import pid_step
+    from src.fuzzy_controller import fuzzy_step
+    from src.ga_fuzzy_controller import ga_fuzzy_step
+    from src.adaptive_fuzzy import adaptive_fuzzy_step
+    from src.metrics import run_closed_loop, all_metrics
+    from src.weather_profile_generator import generate_weather_profile
+    ctrls = [("on/off", onoff_step),
+             ("PID", functools.partial(pid_step, dt=60.0)),
+             ("hand fuzzy", functools.partial(fuzzy_step, dt=60.0)),
+             ("GA fuzzy", functools.partial(ga_fuzzy_step, dt=60.0)),
+             ("adaptive fuzzy", adaptive_fuzzy_step)]
+    scenarios = [
+        ("seed7", os.path.join(ROOT, "weather", "weather_profile.csv")),
+        ("seed21", os.path.join(ROOT, "weather", "holdout_21.csv")),
+        ("seed13", ephemeral_weather_path(13)),
+    ]
+    heat = os.path.join(os.path.dirname(ephemeral_weather_path(7)),
+                        "heatwave.csv")
+    if not os.path.exists(heat):
+        generate_weather_profile(heat, seed=7, t_mean=26.0)
+    cold = os.path.join(os.path.dirname(ephemeral_weather_path(7)),
+                        "coldsnap.csv")
+    if not os.path.exists(cold):
+        generate_weather_profile(cold, seed=7, t_mean=14.0)
+    scenarios += [("heatwave", heat), ("coldsnap", cold)]
+    rows = []
+    for name, fn in ctrls:
+        for scenario, path in scenarios:
+            T, RH, U = run_closed_loop(fn, path, n=n, T_sp=T_sp, RH_sp=RH_sp)
+            cost = all_metrics(T, RH, U, T_sp, RH_sp)["cost"]
+            sat = sum(1 for u in U
+                      if u["heater"] >= 0.99 or u["fan_cooler"] >= 0.99)
+            rows.append({"controller": name, "scenario": scenario,
+                         "cost": round(cost, 2),
+                         "sat_pct": round(100.0 * sat / max(1, len(U)), 1)})
+    return rows
+
+
+def pareto_frontier():
+    """Energy vs comfort tradeoff from frozen scoreboard rows (no sim).
+
+    Returns (points, frontier) where points = [(energy, iae_sum, label)] for
+    the 4 holdout controllers and frontier = the non-dominated subset.
+    Comfort proxy = iae_T + iae_H (lower is better, like energy).
+    """
+    rows = holdout_ranking(scoreboard_rows())
+    pts = [(float(r["energy"]), float(r["iae_T"]) + float(r["iae_H"]),
+            DISPLAY[r["controller"]]) for r in rows]
+    front = [p for p in pts
+             if not any(q[0] <= p[0] and q[1] <= p[1] and q != p for q in pts)]
+    return pts, sorted(front)
+
+
+def scoreboard_rows():
+    """Frozen comparison.csv rows (shared reader for CSV-arithmetic views)."""
+    with open(SCOREBOARD_PATH) as f:
+        return list(csv.DictReader(f))
+
+
+def build_pareto_figure(points, frontier):
+    """Energy-vs-discomfort scatter + frontier line (unclosed)."""
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.scatter([p[0] for p in points], [p[1] for p in points],
+               color="#78909C", s=80, label="holdout controllers")
+    fx = [p[0] for p in frontier]
+    fy = [p[1] for p in frontier]
+    ax.plot(fx, fy, "C1--", label="pareto frontier")
+    for e, d, lab in points:
+        ax.annotate(lab, (e, d), fontsize=8,
+                    xytext=(4, 4), textcoords="offset points")
+    ax.set_xlabel("energy (duty-hours)")
+    ax.set_ylabel("discomfort (iae_T + iae_H)")
+    ax.set_title("Energy vs comfort — holdout Pareto")
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
     _paint_light(fig, ax)
     fig.tight_layout()
     return fig

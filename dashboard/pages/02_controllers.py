@@ -29,7 +29,7 @@ from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
 from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
     scenario_delta, DISPLAY, build_controller_trace_figure, load_kpi_row, \
-    build_overlay_figure
+    build_overlay_figure, robustness_table
 
 
 def resolve_weather(seed):
@@ -103,9 +103,16 @@ fig = build_scenario_figure(hours_a, runs_a, runs_b, T_sp, RH_sp,
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="controllers_traces.png", mime="image/png")
 st.subheader("Overlay: all four controllers on side A, one axes")
+overlay_fig = build_overlay_figure(hours_a,
+                                   {n: T for n, (T, _, _) in runs_a.items()},
+                                   T_sp)
+st.download_button("Download overlay (PNG)",
+                   data=fig_to_png_bytes(overlay_fig),
+                   file_name="controllers_overlay.png", mime="image/png")
+st.pyplot(overlay_fig)
 st.pyplot(build_overlay_figure(hours_a,
-                               {n: T for n, (T, _, _) in runs_a.items()},
-                               T_sp))
+                               {n: RH for n, (_, RH, _) in runs_a.items()},
+                               RH_sp, series="RH"))
 tT, tH, tE = st.tabs(["Temperature", "Humidity", "Energy"])
 with tT:
     st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
@@ -116,6 +123,16 @@ with tH:
 with tE:
     st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
                                             RH_sp, seed_A, seed_B, "energy"))
+
+st.subheader("Robustness: seeds + disturbances + saturation")
+if st.checkbox("Run robustness (25 closed-loop runs, cached)"):
+    st.dataframe(cached_robustness())
+
+@st.cache_data
+def cached_robustness():
+    """5 controllers x 5 scenarios, computed once per session."""
+    return robustness_table()
+
 
 with st.expander("Provenance"):
     st.write("Controllers rerun the src closed loops live on shared weather "

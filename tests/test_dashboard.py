@@ -543,11 +543,13 @@ def test_export_wiring():
                           ("greenhouse_evidence_pack.zip",
                            "application/zip")],
         "01_model_sim.py": [("model_sim_chart.png", "image/png")],
-        "02_controllers.py": [("controllers_traces.png", "image/png")],
+        "02_controllers.py": [("controllers_traces.png", "image/png"),
+                               ("controllers_overlay.png", "image/png")],
         "03_ga_explorer.py": [("ga_convergence.png", "image/png"),
                                ("ga_convergence_replay.png", "image/png"),
                                ("ga_mfs.png", "image/png"),
-                               ("ga_explorer_response.png", "image/png")],
+                               ("ga_explorer_response.png", "image/png"),
+                               ("ga_sensitivity.png", "image/png")],
     }
     total = 0
     for fname, pairs in expect.items():
@@ -556,8 +558,8 @@ def test_export_wiring():
             assert name in src, (fname, name)
             assert mime in src, (fname, mime)
         total += src.count("download_button")
-    assert total == 10, total
-    print("export wiring: 10 download buttons with filenames+MIME across pages")
+    assert total == 12, total
+    print("export wiring: 12 download buttons with filenames+MIME across pages")
     src04 = pages["04_results.py"]
     assert "evidence_pack" in src04, "ZIP button missing on 04_results"
     assert "application/zip" in src04, "ZIP MIME missing on 04_results"
@@ -575,7 +577,10 @@ def test_overlay_figure():
     assert len(lines) == 5, len(lines)  # 4 controllers + setpoint
     _, labels = fig.axes[0].get_legend_handles_labels()
     assert labels == list(hists) + ["setpoint"], labels
-    print("overlay figure: 4 traces + setpoint, labels ok")
+    rh_fig = build_overlay_figure(hours, hists, 70.0, series="RH")
+    assert len(rh_fig.axes[0].lines) == 5, len(rh_fig.axes[0].lines)
+    assert "humidity" in rh_fig.axes[0].get_title(), rh_fig.axes[0].get_title()
+    print("overlay figure: 4 traces + setpoint, labels ok (T and RH)")
 
 
 def test_sensitivity():
@@ -589,6 +594,36 @@ def test_sensitivity():
     fig = build_sensitivity_figure(rows)
     assert len(fig.axes[0].patches) == 10, len(fig.axes[0].patches)
     print("sensitivity: base %.2f, 10 dcosts finite, 10 bars" % base)
+
+
+def test_robustness():
+    import math
+    from dashboard.helpers import robustness_table
+    rows = robustness_table(n=120)
+    assert len(rows) == 25, len(rows)  # 5 controllers x 5 scenarios
+    ctrls = {r["controller"] for r in rows}
+    assert ctrls == {"on/off", "PID", "hand fuzzy", "GA fuzzy",
+                     "adaptive fuzzy"}, ctrls
+    scenarios = {r["scenario"] for r in rows}
+    assert scenarios == {"seed7", "seed21", "seed13", "heatwave",
+                         "coldsnap"}, scenarios
+    for r in rows:
+        assert math.isfinite(r["cost"]), r
+        assert 0.0 <= r["sat_pct"] <= 100.0, r
+    print("robustness: 25 rows, costs finite, saturation bounded")
+
+
+def test_pareto():
+    from dashboard.helpers import pareto_frontier, build_pareto_figure
+    pts, front = pareto_frontier()
+    assert len(pts) == 4, pts  # 4 holdout controllers, frozen rows only
+    assert len(front) >= 1, front
+    for p in front:  # nothing dominates a frontier point
+        assert not any(q[0] <= p[0] and q[1] <= p[1] and q != p
+                       for q in pts), p
+    fig = build_pareto_figure(pts, front)
+    assert "Pareto" in fig.axes[0].get_title()
+    print("pareto: 4 points, %d on frontier" % len(front))
 
 
 if __name__ == "__main__":
