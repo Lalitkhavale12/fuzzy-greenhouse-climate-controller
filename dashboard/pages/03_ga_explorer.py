@@ -24,7 +24,8 @@ from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
-    build_replay_figure, GEN_COUNT, DISPLAY, load_kpi_row
+    build_replay_figure, GEN_COUNT, DISPLAY, load_kpi_row, \
+    mf_sensitivity_costs, build_sensitivity_figure
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -125,6 +126,13 @@ fig_r = build_replay_figure(best, mean, g)
 st.download_button("Download replay chart (PNG)", data=fig_to_png_bytes(fig_r),
                    file_name="ga_convergence_replay.png", mime="image/png")
 st.pyplot(fig_r)
+
+st.subheader("MF sensitivity: closed-loop cost per center shift")
+if st.checkbox("Run sensitivity (10 closed-loop runs, cached)"):
+    sens_base, sens_rows = mf_sensitivity_costs()
+    st.metric("hand-fuzzy baseline cost (seed 7)", "%.2f" % sens_base)
+    st.dataframe([{"param": lab, "dcost": dc} for lab, dc in sens_rows])
+    st.pyplot(build_sensitivity_figure(sens_rows))
 
 st.subheader("Membership before/after: hand solid vs GA dashed")
 MF_KEYS = ["eT", "eH"]

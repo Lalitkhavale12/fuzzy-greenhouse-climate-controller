@@ -9,7 +9,6 @@ Run:  python -m streamlit run dashboard/app.py
 
 import os
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
@@ -20,8 +19,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
-from src.weather_profile_generator import generate_weather_profile
-from dashboard.helpers import fig_to_png_bytes, DISPLAY, load_kpi_row
+from dashboard.helpers import fig_to_png_bytes, DISPLAY, load_kpi_row, \
+    ephemeral_weather_path
 
 T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
 
@@ -32,8 +31,7 @@ def cached_weather(seed):
     if seed == 7:
         path = "weather/weather_profile.csv"
     else:
-        path = os.path.join(tempfile.mkdtemp(), "seed_%d.csv" % seed)
-        generate_weather_profile(path, seed=seed)
+        path = ephemeral_weather_path(seed)
     return load_weather_profile(path)
 
 
