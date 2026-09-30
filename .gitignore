@@ -1,3 +1,5 @@
 __pycache__/
 *.pyc
 results/ga_evolution*
+frontend/node_modules/
+frontend/dist/
