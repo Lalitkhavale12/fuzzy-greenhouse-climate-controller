@@ -19,16 +19,6 @@ python tests/test_dashboard.py               # headless acceptance suite (21 che
 python dashboard/helpers.py                  # helpers self-check
 ```
 
-## React + FastAPI stack
-
-Same `src/` engine behind a REST API and a React (Vite) frontend:
-
-```bash
-python -m uvicorn api.main:app --port 8000   # API → http://localhost:8000
-cd frontend && npm install && npm run dev    # UI → http://localhost:5173
-python tests/test_api.py                     # API acceptance suite (6 checks)
-```
-
 ## Pages
 
 - **Model Sim** — open-loop plant + weather explorer (duty sliders)
