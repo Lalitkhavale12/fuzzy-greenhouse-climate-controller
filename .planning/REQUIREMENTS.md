@@ -67,7 +67,7 @@
 
 ### Deferred
 
-- **FUZZ-07**: Adaptive rule base (beyond fixed 5x5 grid)
+- [x] **FUZZ-07**: Adaptive rule base (beyond fixed 5x5 grid) — done via supervisory output-gain adaptation in `src/adaptive_fuzzy.py` (fixed Mamdani core + EMA-error-driven T-loop gain, caller-owned state)
 
 ## Out of Scope
 

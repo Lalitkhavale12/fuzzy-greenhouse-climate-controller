@@ -11,5 +11,9 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install -r requirements.txt
-      - run: python tests/test_dashboard.py
+      - run: pip install -r requirements.txt nbconvert ipykernel pytest
+      - run: python -m pytest tests/ -q
+      - run: |
+          for f in notebooks/*.ipynb; do cp "$f" ./ci_tmp_$(basename $f); done
+          PYTHONPATH=. python -m nbconvert --execute --to html --output-dir /tmp/nbout ci_tmp_*.ipynb --ExecutePreprocessor.timeout=900
+          rm ci_tmp_*.ipynb
