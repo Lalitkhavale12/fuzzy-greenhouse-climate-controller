@@ -49,19 +49,19 @@
 
 ### Theming & Layout (UI)
 
-- [ ] **UI-01**: Dashboard applies a greenhouse theme via `.streamlit/config.toml` with readable charts in light mode
-- [ ] **UI-03**: Pages use metric cards, tabs, and expanders with mobile-friendly columns
+- [x] **UI-01**: Dashboard applies a greenhouse theme via `.streamlit/config.toml` with readable charts in light mode
+- [x] **UI-03**: Pages use metric cards, tabs, and expanders with mobile-friendly columns
 
 ### Export (UI)
 
-- [ ] **UI-02**: Dashboard exports comparison results to disk — scoreboard CSV, chart PNG, and verdict summary downloads (promoted from Deferred)
-- [ ] **UI-07**: Dashboard bundles exports into a one-click ZIP report
+- [x] **UI-02**: Dashboard exports comparison results to disk — scoreboard CSV, chart PNG, and verdict summary downloads (promoted from Deferred)
+- [x] **UI-07**: Dashboard bundles exports into a one-click ZIP report
 
 ### Interactive Analysis (UI)
 
-- [ ] **UI-04**: Controllers page compares two weather scenarios side-by-side on shared sliders
-- [ ] **UI-05**: GA Explorer page lets the user drag MF centers and watch the fuzzy response reshape live (deep-copied MFs, validity-clamped, frozen baseline never mutated)
-- [ ] **UI-06**: GA Explorer page replays convergence generation-by-generation over frozen history (slider scrub; no live evolution)
+- [x] **UI-04**: Controllers page compares two weather scenarios side-by-side on shared sliders
+- [x] **UI-05**: GA Explorer page lets the user drag MF centers and watch the fuzzy response reshape live (deep-copied MFs, validity-clamped, frozen baseline never mutated)
+- [x] **UI-06**: GA Explorer page replays convergence generation-by-generation over frozen history (slider scrub; no live evolution)
 
 ## v2 Requirements
 
@@ -104,13 +104,13 @@
 | METR-02 | Phase 5 | Pending |
 | PROOF-01 | Phase 6 | Pending |
 | PROOF-02 | Phase 7 | Pending |
-| UI-01 | Phase 8 | Pending |
-| UI-02 | Phase 8 | Pending |
-| UI-03 | Phase 10 | Pending |
-| UI-04 | Phase 9 | Pending |
-| UI-05 | Phase 9 | Pending |
-| UI-06 | Phase 9 | Pending |
-| UI-07 | Phase 10 | Pending |
+| UI-01 | Phase 8 | Verified |
+| UI-02 | Phase 8 | Verified |
+| UI-03 | Phase 10 | Verified |
+| UI-04 | Phase 9 | Verified |
+| UI-05 | Phase 9 | Verified |
+| UI-06 | Phase 9 | Verified |
+| UI-07 | Phase 10 | Verified |
 
 **Coverage:**
 - v1 requirements: 22 total

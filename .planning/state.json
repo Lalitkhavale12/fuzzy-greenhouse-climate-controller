@@ -1,0 +1,28 @@
+{
+  "contract": "1.0.0",
+  "flavor": "core",
+  "milestone": "v1.1 — Dashboard Polish",
+  "phases": [
+    {
+      "number": "8",
+      "name": "Theme + Export Foundation",
+      "status": "complete"
+    },
+    {
+      "number": "9",
+      "name": "Interactive Analysis",
+      "status": "complete"
+    },
+    {
+      "number": "10",
+      "name": "Layout Polish + Report Bundle",
+      "status": "complete"
+    }
+  ],
+  "next": {
+    "command": "/gsd-complete-milestone v1.1",
+    "label": "Complete milestone v1.1",
+    "reason": "v1.1 audit passed 7/7 — archive and tag"
+  },
+  "updated_at": "2026-09-29T13:38:40.721Z"
+}
