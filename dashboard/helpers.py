@@ -45,6 +45,12 @@ LIGHT_FACE = "#F7FAF3"  # pale greenhouse white — figure background
 LIGHT_AXES = "#FFFFFF"  # axes wells
 INK = "#263023"  # soil-ink text
 
+# ui-ux-pro-max data palette: blue series + amber highlight, applied as the
+# matplotlib default cycle so every dashboard figure inherits it at import.
+plt.rcParams["axes.prop_cycle"] = plt.cycler(color=[
+    "#1E40AF", "#3B82F6", "#60A5FA", "#93C5FD", "#F59E0B", "#2E7D32"])
+OVERLAY_COLORS = ["#1E40AF", "#3B82F6", "#60A5FA", "#F59E0B"]  # GA fuzzy amber
+
 ORDER = ["onoff", "pid", "fuzzy", "ga_fuzzy"]
 DISPLAY = {"onoff": "on/off", "pid": "PID",
            "fuzzy": "hand fuzzy", "ga_fuzzy": "GA fuzzy"}
@@ -482,8 +488,8 @@ def build_overlay_figure(hours, t_hists, T_sp, series="T"):
     humidity with a dashed 70%%-style reference passed as T_sp.
     """
     fig, ax = plt.subplots(figsize=(10, 4))
-    for name in t_hists:
-        ax.plot(hours, t_hists[name], label=name)
+    for (name, hist), color in zip(t_hists.items(), OVERLAY_COLORS):
+        ax.plot(hours, hist, label=name, color=color)
     ax.axhline(float(T_sp), color="k", linestyle="--", linewidth=1,
                label="setpoint")
     if series == "RH":

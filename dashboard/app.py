@@ -20,6 +20,16 @@ from dashboard.helpers import DISPLAY, load_kpi_row
 st.set_page_config(page_title="Fuzzy Greenhouse Climate Controller", layout="wide")
 
 st.title("GA-Optimized Fuzzy Greenhouse Climate Controller")
+st.markdown(  # ui-ux-pro-max card pattern: injected once, styles all pages
+    "<style>"
+    '[data-testid="stMetric"]{background:#FFFFFF;border:1px solid #DCE7D4;'
+    "border-radius:12px;padding:12px 16px;"
+    "box-shadow:0 1px 3px rgba(38,48,35,.08);}"
+    '[data-testid="stMetricLabel"]{color:#475569;}'
+    "h1{letter-spacing:-.02em;}h2{color:#2E7D32;}"
+    "</style>",
+    unsafe_allow_html=True,
+)
 try:
     kpi = load_kpi_row()
     st.success("Headline: %s ranks #1 on the frozen holdout — weighted cost "
