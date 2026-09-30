@@ -44,7 +44,7 @@ WEATHERS = [("train-seed7", "weather/weather_profile.csv"),
             ("holdout-seed21", "weather/holdout_21.csv")]
 
 
-def _check_hist(hist, sp, dt):
+def _check_hist(hist: list, sp: float, dt: float) -> np.ndarray:
     a = np.asarray(hist, dtype=float)
     assert a.size > 0, "history must be non-empty"
     assert np.all(np.isfinite(a)), "history must be finite"
@@ -53,26 +53,27 @@ def _check_hist(hist, sp, dt):
     return a
 
 
-def rmse(hist, sp):
+def rmse(hist: list, sp: float) -> float:
     """Root-mean-square error vs setpoint."""
     e = _check_hist(hist, sp, 60.0) - sp
     return float(np.sqrt(np.mean(e * e)))
 
 
-def iae(hist, sp, dt=60.0):
+def iae(hist: list, sp: float, dt: float = 60.0) -> float:
     """Integral absolute error in degree-hours / %-hours."""
     e = _check_hist(hist, sp, dt) - sp
     return float(np.sum(np.abs(e)) * dt / 3600.0)
 
 
-def ise(hist, sp, dt=60.0):
+def ise(hist: list, sp: float, dt: float = 60.0) -> float:
     """Integral squared error (dt-weighted)."""
     e = _check_hist(hist, sp, dt) - sp
     return float(np.sum(e * e) * dt / 3600.0)
 
 
-def settling_time_min(T_hist, RH_hist, T_sp=25.0, RH_sp=70.0,
-                      band_T=0.5, band_RH=3.0, dt=60.0):
+def settling_time_min(T_hist: list, RH_hist: list, T_sp: float = 25.0,
+                      RH_sp: float = 70.0, band_T: float = 0.5,
+                      band_RH: float = 3.0, dt: float = 60.0) -> float:
     """Joint-band last-exit scan: T within +-band_T AND RH within +-band_RH
     for the remainder of the run. 0.0 when clean, float("inf") when the
     final step violates (never settled)."""
@@ -92,14 +93,14 @@ def settling_time_min(T_hist, RH_hist, T_sp=25.0, RH_sp=70.0,
     return float((bad[-1] + 1) * dt / 60.0)
 
 
-def overshoot(hist, sp):
+def overshoot(hist: list, sp: float) -> float:
     """Positive-side-only absolute peak beyond setpoint (startup undershoot
     from the cold 20 C init is a transient, not overshoot)."""
     a = _check_hist(hist, sp, 60.0)
     return float(max(0.0, np.max(a - sp)))
 
 
-def energy_duty_hours(U_hist):
+def energy_duty_hours(U_hist: list) -> float:
     """Total duty-hours over ALL actuators incl. vent.
 
     LOCKED — identical to genetic_algorithm.closed_loop_breakdown
@@ -116,15 +117,16 @@ def energy_duty_hours(U_hist):
     return float(E)
 
 
-def weighted_cost(iae_T, iae_H, E, w1=W1, w2=W2, w3=W3):
+def weighted_cost(iae_T: float, iae_H: float, E: float, w1: float = W1,
+                  w2: float = W2, w3: float = W3) -> float:
     """Locked cost: W1*IAE_T + W2*IAE_H + W3*E with 1.0/1.0/0.01."""
     assert np.isfinite(iae_T) and np.isfinite(iae_H) and np.isfinite(E)
     assert (w1, w2, w3) == (1.0, 1.0, 0.01), "weights locked 1.0/1.0/0.01"
     return float(w1 * iae_T + w2 * iae_H + w3 * E)
 
 
-def run_closed_loop(controller_step, weather_path, n=1440,
-                    T_sp=25.0, RH_sp=70.0):
+def run_closed_loop(controller_step, weather_path: str, n: int = 1440,
+                    T_sp: float = 25.0, RH_sp: float = 70.0) -> tuple[list, list, list]:
     """1440 x dt=60 closed loop -> (T_hist, RH_hist, U_hist).
 
     weather_path is REQUIRED (no default): both table blocks must score
@@ -152,7 +154,8 @@ def run_closed_loop(controller_step, weather_path, n=1440,
     return T_hist, RH_hist, U_hist
 
 
-def all_metrics(T_hist, RH_hist, U_hist, T_sp=25.0, RH_sp=70.0):
+def all_metrics(T_hist: list, RH_hist: list, U_hist: list,
+                T_sp: float = 25.0, RH_sp: float = 70.0) -> dict:
     """Bundle the six METR-01 metrics plus locked cost (no rank)."""
     m = {
         "rmse_T": rmse(T_hist, T_sp),
@@ -170,7 +173,7 @@ def all_metrics(T_hist, RH_hist, U_hist, T_sp=25.0, RH_sp=70.0):
     return m
 
 
-def compare(out_path="results/comparison.csv"):
+def compare(out_path: str = "results/comparison.csv") -> list:
     """Scoreboard: 4 controllers x 2 weathers -> list of 8 dicts + CSV.
 
     Rows carry exactly the COLUMNS keys. rank 1..4 by cost WITHIN each

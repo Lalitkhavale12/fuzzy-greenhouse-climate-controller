@@ -34,7 +34,7 @@ _MFS_PATH = None
 _MFS_MTIME = None
 
 
-def load_optimized_mfs(path=DEFAULT_PATH):
+def load_optimized_mfs(path: str = DEFAULT_PATH) -> tuple[dict, dict]:
     """Load + validate artifact -> (MF dict of arrays, gains dict).
 
     Schema v2 (A2): "mfs" (six groups) + "coupling" {k_heat, k_vent}.
@@ -77,8 +77,10 @@ def load_optimized_mfs(path=DEFAULT_PATH):
     return copy.deepcopy(_MFS), copy.deepcopy(_GAINS)
 
 
-def ga_fuzzy_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0,
-                  path=DEFAULT_PATH):
+def ga_fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
+                  RH_sp: float = 70.0, state: dict | None = None,
+                  dt: float = 60.0,
+                  path: str = DEFAULT_PATH) -> tuple[dict, dict]:
     """GA fuzzy: same engine call as hand fuzzy, then the A2 coupling boost."""
     assert np.isfinite(T_C) and np.isfinite(rh_pct)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)

@@ -37,12 +37,14 @@ RULES = np.array([          # cols: de = NB | NS | ZO | PS | PB
 ])  # cells index into (NB, NS, ZO, PS, PB)
 
 
-def tri(x, c, w):
+def tri(x: float, c: float, w: float) -> float:
     """Triangular membership in [0,1]. Edge MFs saturate via input clipping in infer()."""
     return float(np.clip(1.0 - abs(float(x) - c) / w, 0.0, 1.0))
 
 
-def infer(e, de, EC, EW, DC, DW, OC, OW, lo, hi, n=201):
+def infer(e: float, de: float, EC: np.ndarray, EW: np.ndarray,
+          DC: np.ndarray, DW: np.ndarray, OC: np.ndarray, OW: np.ndarray,
+          lo: float, hi: float, n: int = 201) -> float:
     """Shared Mamdani min-max core with discrete centroid (zero-fire -> 0.0)."""
     mu_e = np.array([tri(np.clip(e, EC[0], EC[-1]), c, w) for c, w in zip(EC, EW)])
     mu_d = np.array([tri(np.clip(de, DC[0], DC[-1]), c, w) for c, w in zip(DC, DW)])
@@ -60,7 +62,9 @@ def infer(e, de, EC, EW, DC, DW, OC, OW, lo, hi, n=201):
     return float(np.sum(grid * agg) / s) if s > 0.0 else 0.0
 
 
-def fuzzy_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0, mfs=FUZZY_MFS):
+def fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
+               RH_sp: float = 70.0, state: dict | None = None, dt: float = 60.0,
+               mfs: dict = FUZZY_MFS) -> tuple[dict, dict]:
     """Incremental dual-loop Mamdani fuzzy. state = {'pT','pH','uT','uH'}."""
     assert np.isfinite(T_C) and np.isfinite(rh_pct)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)

@@ -12,8 +12,9 @@ means a fresh latch dict (never a mutable default).
 import numpy as np
 
 
-def onoff_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None,
-               band_T=0.5, band_RH=3.0):
+def onoff_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
+               RH_sp: float = 70.0, state: dict | None = None,
+               band_T: float = 0.5, band_RH: float = 3.0) -> tuple[dict, dict]:
     """Hysteresis on/off. state = {'heat': bool, 'cool': bool, 'fog': bool}."""
     assert np.isfinite(T_C) and np.isfinite(rh_pct)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)

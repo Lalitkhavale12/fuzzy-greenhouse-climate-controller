@@ -12,9 +12,11 @@ module never imports from this module (zero coupling).
 import numpy as np
 
 
-def generate_weather_profile(out_path, seed=7, t_mean=20.0, t_amp=6.0,
-                             rh_mean=65.0, rh_amp=18.0, t_peak_h=15.0,
-                             duration_h=24.0, interval_min=15):
+def generate_weather_profile(out_path: str, seed: int = 7, t_mean: float = 20.0,
+                             t_amp: float = 6.0, rh_mean: float = 65.0,
+                             rh_amp: float = 18.0, t_peak_h: float = 15.0,
+                             duration_h: float = 24.0,
+                             interval_min: int = 15) -> str:
     rng = np.random.default_rng(seed)
     t_min = np.arange(0, int(duration_h*60) + 1, interval_min, dtype=int)  # 0..1440
     t_h   = t_min / 60.0

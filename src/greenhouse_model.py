@@ -29,30 +29,31 @@ params = {                          # D-07 named dict — all values probe-verif
 }
 
 
-def es_pa(T_C):
+def es_pa(T_C: float) -> float:
     """Saturation vapor pressure (Pa) — Alduchov & Eskridge 1996 Magnus form."""
     return 610.94 * np.exp(17.625 * T_C / (T_C + 243.04))
 
 
-def wsat_g_per_kg(T_C, p_Pa=101325.0):
+def wsat_g_per_kg(T_C: float, p_Pa: float = 101325.0) -> float:
     """Saturation absolute humidity (g/kg) at sea level."""
     return 622.0 * es_pa(T_C) / (p_Pa - es_pa(T_C))
 
 
-def relative_humidity(w_g_per_kg, T_C):
+def relative_humidity(w_g_per_kg: float, T_C: float) -> float:
     """RH (%) = w/wsat(T)*100, clamped to [0, 100] (D-16; Pitfall 2)."""
     rh = 100.0 * w_g_per_kg / wsat_g_per_kg(T_C)
     return float(min(max(rh, 0.0), 100.0))
 
 
-def daytime_solar(t_hour, A_sol):
+def daytime_solar(t_hour: float, A_sol: float) -> float:
     """Sine solar gain 06:00–18:00 local, peak A_sol W/m3 at noon, else 0."""
     if 6.0 <= t_hour <= 18.0:
         return A_sol * np.sin(np.pi * (t_hour - 6.0) / 12.0)
     return 0.0
 
 
-def step(dt, actuators, weather_at_t, T_C, w_gkg):
+def step(dt: float, actuators: dict, weather_at_t: tuple,
+         T_C: float, w_gkg: float) -> tuple[float, float, float]:
     """One forward-Euler step (D-13) -> (T_C_new, w_new, rh_pct).
 
     actuators: exactly {"heater","fan_cooler","fogger","vent"} with duties in
@@ -84,7 +85,7 @@ def step(dt, actuators, weather_at_t, T_C, w_gkg):
     return T_new, w_new, relative_humidity(w_new, T_new)
 
 
-def load_weather_profile(path):
+def load_weather_profile(path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load weather CSV -> (t_minutes, temp_C, w_out_gkg).
 
     Space-delimited numeric rows (D-13) after the header line

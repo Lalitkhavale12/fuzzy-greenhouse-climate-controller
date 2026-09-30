@@ -62,7 +62,7 @@ N_STEPS = 1440
 DT = 60.0
 
 
-def _sigmas():
+def _sigmas() -> np.ndarray:
     """Per-gene mutation sigma = 0.1 * allowed range (centers, widths, gains)."""
     sig = np.zeros(CHROM_LEN)
     i = 0
@@ -82,7 +82,7 @@ def _sigmas():
 SIGMAS = _sigmas()
 
 
-def encode(mfs, gains=None):
+def encode(mfs: dict, gains: dict | None = None) -> np.ndarray:
     """MF dict (+ optional gains) -> flat 62-element float vector.
 
     Layout: 5 centers then 5 widths per group in ORDER, then k_heat, k_vent.
@@ -104,7 +104,7 @@ def encode(mfs, gains=None):
     return np.concatenate(parts).astype(float)
 
 
-def decode(chrom):
+def decode(chrom) -> tuple[dict, dict]:
     """62-element vector -> (fresh repaired MF dict, fresh gains dict).
 
     Accepts len-60 (legacy decoupled: gains default to 0.0) or len-62.
@@ -130,7 +130,8 @@ def decode(chrom):
     return mfs, gains
 
 
-def apply_coupling(act, rh_pct, RH_sp, gains):
+def apply_coupling(act: dict, rh_pct: float, RH_sp: float,
+                   gains: dict) -> dict:
     """Humidity-driven heater/vent boost AFTER the decoupled velocity loops.
 
     boost = k * max(0, rh - RH_sp); duties re-clipped to [0, 1], exact
@@ -150,8 +151,10 @@ def apply_coupling(act, rh_pct, RH_sp, gains):
     return out
 
 
-def coupled_fuzzy_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None,
-                       dt=60.0, mfs=FUZZY_MFS, gains=None):
+def coupled_fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
+                       RH_sp: float = 70.0, state: dict | None = None,
+                       dt: float = 60.0, mfs: dict = FUZZY_MFS,
+                       gains: dict | None = None) -> tuple[dict, dict]:
     """Same engine call as hand fuzzy, then the A2 coupling boost.
 
     The decoupled velocity loops (fuzzy_step) are untouched; state handling
@@ -164,8 +167,10 @@ def coupled_fuzzy_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None,
     return apply_coupling(act, rh_pct, RH_sp, g), st
 
 
-def closed_loop_breakdown(mfs, T_out_hr, w_out_hr, hours,
-                           T_sp=25.0, RH_sp=70.0, gains=None):
+def closed_loop_breakdown(mfs: dict, T_out_hr: np.ndarray,
+                            w_out_hr: np.ndarray, hours: np.ndarray,
+                            T_sp: float = 25.0, RH_sp: float = 70.0,
+                            gains: dict | None = None) -> tuple[float, float, float]:
     """Full 1440-step closed loop -> (IAE_T, IAE_H, duty-hours energy E).
 
     Runs the COUPLED path (D-06/A2): decoupled velocity loops first, then
@@ -188,7 +193,9 @@ def closed_loop_breakdown(mfs, T_out_hr, w_out_hr, hours,
     return iae_T, iae_H, E
 
 
-def evaluate(chrom, T_out_hr, w_out_hr, hours, T_sp=25.0, RH_sp=70.0):
+def evaluate(chrom, T_out_hr: np.ndarray, w_out_hr: np.ndarray,
+             hours: np.ndarray, T_sp: float = 25.0,
+             RH_sp: float = 70.0) -> float:
     """Fitness: W1*IAE_T + W2*IAE_H + W3*E (coupled path). Never raises."""
     try:
         mfs, gains = decode(chrom)
@@ -204,14 +211,16 @@ def evaluate(chrom, T_out_hr, w_out_hr, hours, T_sp=25.0, RH_sp=70.0):
 fitness = evaluate  # alias: the plan names it "fitness", code calls evaluate
 
 
-def tournament_select(pop, fit, rng, k=3):
+def tournament_select(pop: np.ndarray, fit: np.ndarray,
+                      rng: np.random.Generator, k: int = 3) -> np.ndarray:
     """Best of k randomly drawn individuals (copy, never a view)."""
     k = min(k, len(pop))
     idx = rng.choice(len(pop), size=k, replace=False)
     return pop[idx[np.argmin(fit[idx])]].copy()
 
 
-def blx_alpha(p1, p2, rng, alpha=0.5):
+def blx_alpha(p1: np.ndarray, p2: np.ndarray, rng: np.random.Generator,
+              alpha: float = 0.5) -> np.ndarray:
     """BLX-alpha blend crossover; MF repair applied later in decode()."""
     d = np.abs(p1 - p2)
     lo = np.minimum(p1, p2) - alpha * d
@@ -219,14 +228,16 @@ def blx_alpha(p1, p2, rng, alpha=0.5):
     return rng.uniform(lo, hi)
 
 
-def gaussian_mutate(child, rng, p_gene=1.0 / CHROM_LEN, sigmas=SIGMAS):
+def gaussian_mutate(child: np.ndarray, rng: np.random.Generator,
+                    p_gene: float = 1.0 / CHROM_LEN,
+                    sigmas: np.ndarray = SIGMAS) -> np.ndarray:
     """Per-gene gaussian mutation, sigma 0.1 * gene range."""
     mask = rng.random(child.size) < p_gene
     child[mask] += rng.normal(0.0, 1.0, int(mask.sum())) * sigmas[mask]
     return child
 
 
-def init_population(rng, n):
+def init_population(rng: np.random.Generator, n: int) -> np.ndarray:
     """Individual 0 = exact hand encoding + ZERO gains (hand-equivalent).
 
     Rest = additive jitter around hand values (WR-01: multiplicative jitter
@@ -246,9 +257,11 @@ def init_population(rng, n):
     return pop
 
 
-def _write_json(path, mfs_lists, gains_lists, best_fit, weights, train_weather,
-                train_seed, holdout_seed, population, generations, rng_seed,
-                hist_best, hist_mean):
+def _write_json(path: str, mfs_lists: dict, gains_lists: dict,
+                best_fit: float, weights: dict, train_weather: str,
+                train_seed: int, holdout_seed: int, population: int,
+                generations: int, rng_seed: int,
+                hist_best: list, hist_mean: list) -> None:
     d = os.path.dirname(os.path.abspath(path))
     if d:
         os.makedirs(d, exist_ok=True)
@@ -262,18 +275,19 @@ def _write_json(path, mfs_lists, gains_lists, best_fit, weights, train_weather,
                    "history": {"best": hist_best, "mean": hist_mean}}, f)
 
 
-def _mfs_to_lists(mfs):
+def _mfs_to_lists(mfs: dict) -> dict:
     return {k: {"centers": [float(x) for x in mfs[k]["centers"]],
                 "widths": [float(x) for x in mfs[k]["widths"]]} for k in ORDER}
 
 
-def _gains_to_lists(gains):
+def _gains_to_lists(gains: dict) -> dict:
     return {k: float(gains[k]) for k in COUPLING_KEYS}
 
 
-def run_ga(population=50, generations=50, rng_seed=0,
-           train_weather="weather/weather_profile.csv", train_seed=7,
-           holdout_seed=21, out_path="results/ga_optimized_params.json"):
+def run_ga(population: int = 50, generations: int = 50, rng_seed: int = 0,
+           train_weather: str = "weather/weather_profile.csv", train_seed: int = 7,
+           holdout_seed: int = 21,
+           out_path: str = "results/ga_optimized_params.json") -> dict:
     """Seeded elitism-2 generational GA; flushes best-so-far JSON every gen.
 
     train_seed/holdout_seed are provenance labels recorded in the JSON, NOT

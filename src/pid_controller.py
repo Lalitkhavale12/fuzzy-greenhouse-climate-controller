@@ -16,7 +16,9 @@ GAINS = {'Kp_T': 0.3, 'Ki_T': 0.03, 'Kd_T': 0.0,   # per degC
          'Kp_H': 0.03, 'Ki_H': 0.004, 'Kd_H': 0.0}  # per %RH
 
 
-def pid_step(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None, dt=60.0, gains=GAINS):
+def pid_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
+             RH_sp: float = 70.0, state: dict | None = None, dt: float = 60.0,
+             gains: dict = GAINS) -> tuple[dict, dict]:
     """Positional dual-loop PID. state = {'iT', 'pT', 'iH', 'pH'}."""
     assert np.isfinite(T_C) and np.isfinite(rh_pct)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)
