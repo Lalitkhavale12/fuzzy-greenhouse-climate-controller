@@ -28,7 +28,8 @@ from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
 from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
-    scenario_delta, DISPLAY, build_controller_trace_figure, load_kpi_row
+    scenario_delta, DISPLAY, build_controller_trace_figure, load_kpi_row, \
+    build_overlay_figure
 
 
 def resolve_weather(seed):
@@ -101,6 +102,10 @@ fig = build_scenario_figure(hours_a, runs_a, runs_b, T_sp, RH_sp,
                             seed_A, seed_B)
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="controllers_traces.png", mime="image/png")
+st.subheader("Overlay: all four controllers on side A, one axes")
+st.pyplot(build_overlay_figure(hours_a,
+                               {n: T for n, (T, _, _) in runs_a.items()},
+                               T_sp))
 tT, tH, tE = st.tabs(["Temperature", "Humidity", "Energy"])
 with tT:
     st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,

@@ -459,6 +459,87 @@ def build_replay_figure(best, mean, gen):
     return fig
 
 
+_EPH_DIR = None
+
+
+def ephemeral_weather_path(seed):
+    """Synthetic weather path inside one shared temp dir (no per-seed leak)."""
+    global _EPH_DIR
+    from src.weather_profile_generator import generate_weather_profile
+    import tempfile
+    if _EPH_DIR is None:
+        _EPH_DIR = tempfile.mkdtemp(prefix="gh_weather_")
+    path = os.path.join(_EPH_DIR, "seed_%d.csv" % int(seed))
+    if not os.path.exists(path):
+        generate_weather_profile(path, seed=int(seed))
+    return path
+
+
+def build_overlay_figure(hours, t_hists, T_sp):
+    """All-controller T traces on shared axes + setpoint dashed (no recompute)."""
+    fig, ax = plt.subplots(figsize=(10, 4))
+    for name in t_hists:
+        ax.plot(hours, t_hists[name], label=name)
+    ax.axhline(float(T_sp), color="k", linestyle="--", linewidth=1,
+               label="setpoint")
+    ax.set_xlabel("hour of day")
+    ax.set_ylabel("inside T (degC)")
+    ax.set_title("All four controllers — one axes (does GA hold the line?)")
+    ax.legend(fontsize=8)
+    ax.grid(alpha=0.3)
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
+def mf_sensitivity_costs(delta=0.5, n=1440):
+    """Hand-fuzzy eT center +/-delta -> closed-loop cost each (seed 7 frozen).
+
+    Returns (base_cost, rows) with rows = [(label, dcost)] for 5 centers x 2
+    shifts. Perturbed MFs go through scratch_mfs_from_deltas, so neighbor
+    clamping applies exactly as in the explorer.
+    """
+    from src.fuzzy_controller import FUZZY_MFS, fuzzy_step
+    from src.metrics import run_closed_loop, all_metrics
+    hand_eT = [float(c) for c in FUZZY_MFS["eT"]["centers"]]
+    hand_du = [float(c) for c in FUZZY_MFS["du"]["centers"]]
+    wpath = os.path.join(ROOT, "weather", "weather_profile.csv")
+
+    def _cost(mfs):
+        T, RH, U = run_closed_loop(
+            lambda T_, rh_, Ts_, Rs_, st_: fuzzy_step(
+                T_, rh_, Ts_, Rs_, st_, 60.0, mfs),
+            wpath, n=n)
+        return all_metrics(T, RH, U)["cost"]
+
+    base_mfs, _ = scratch_mfs_from_deltas(hand_eT, hand_du)
+    base = _cost(base_mfs)
+    rows = []
+    for i, c in enumerate(hand_eT):
+        for s in (-float(delta), float(delta)):
+            vec = list(hand_eT)
+            vec[i] = c + s
+            mfs, _ = scratch_mfs_from_deltas(vec, hand_du)
+            rows.append(("eT[%d] %+.1f" % (i, s), _cost(mfs) - base))
+    return base, rows
+
+
+def build_sensitivity_figure(rows):
+    """Horizontal diverging bars of dcost per MF shift (unclosed)."""
+    labels = [r[0] for r in rows]
+    vals = [r[1] for r in rows]
+    colors = ["#C62828" if v > 0 else "#2E7D32" for v in vals]
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.barh(labels, vals, color=colors)
+    ax.axvline(0.0, color="k", linewidth=0.8)
+    ax.set_xlabel("delta closed-loop cost vs hand baseline")
+    ax.set_title("MF sensitivity: which center shift hurts/helps most")
+    ax.grid(alpha=0.3, axis="x")
+    _paint_light(fig, ax)
+    fig.tight_layout()
+    return fig
+
+
 if __name__ == "__main__":
     with open(SCOREBOARD_PATH) as _f:
         _rows = list(csv.DictReader(_f))

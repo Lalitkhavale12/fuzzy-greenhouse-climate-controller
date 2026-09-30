@@ -563,6 +563,34 @@ def test_export_wiring():
     assert "application/zip" in src04, "ZIP MIME missing on 04_results"
 
 
+def test_overlay_figure():
+    from dashboard.helpers import build_overlay_figure
+    hours = [h / 60.0 for h in range(240)]
+    hists = {"on/off": [25.0 + (i % 7) * 0.4 for i in range(240)],
+             "PID": [25.0 + (i % 5) * 0.2 for i in range(240)],
+             "hand fuzzy": [25.0 + (i % 3) * 0.1 for i in range(240)],
+             "GA fuzzy": [25.0 for _ in range(240)]}
+    fig = build_overlay_figure(hours, hists, 25.0)
+    lines = fig.axes[0].lines
+    assert len(lines) == 5, len(lines)  # 4 controllers + setpoint
+    _, labels = fig.axes[0].get_legend_handles_labels()
+    assert labels == list(hists) + ["setpoint"], labels
+    print("overlay figure: 4 traces + setpoint, labels ok")
+
+
+def test_sensitivity():
+    import math
+    from dashboard.helpers import mf_sensitivity_costs, \
+        build_sensitivity_figure
+    base, rows = mf_sensitivity_costs(n=240)
+    assert math.isfinite(base), base
+    assert len(rows) == 10, len(rows)  # 5 eT centers x 2 shifts
+    assert all(math.isfinite(d) for _, d in rows), rows
+    fig = build_sensitivity_figure(rows)
+    assert len(fig.axes[0].patches) == 10, len(fig.axes[0].patches)
+    print("sensitivity: base %.2f, 10 dcosts finite, 10 bars" % base)
+
+
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
