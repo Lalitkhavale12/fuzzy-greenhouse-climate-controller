@@ -7,7 +7,6 @@ notebooks/01_greenhouse_model.ipynb cells 2-4 (Agg line dropped).
 Run:  python -m streamlit run dashboard/app.py
 """
 
-import csv
 import os
 import sys
 import tempfile
@@ -21,10 +20,8 @@ import matplotlib.pyplot as plt
 import streamlit as st
 
 from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
-from src.metrics import COLUMNS  # frozen column contract, never retyped
 from src.weather_profile_generator import generate_weather_profile
-from dashboard.helpers import fig_to_png_bytes, holdout_ranking, DISPLAY, \
-    load_kpi_row
+from dashboard.helpers import fig_to_png_bytes, DISPLAY, load_kpi_row
 
 T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
 

@@ -17,7 +17,7 @@ os.chdir(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file_
 import streamlit as st
 
 from src.metrics import COLUMNS  # frozen column contract, never retyped
-from dashboard.helpers import (ORDER, DISPLAY, WEATHERS, holdout_ranking,
+from dashboard.helpers import (DISPLAY, WEATHERS, holdout_ranking,
                                build_results_figure, fig_to_png_bytes,
                                scoreboard_csv_bytes, verdict_text,
                                evidence_zip_bytes, load_kpi_row)

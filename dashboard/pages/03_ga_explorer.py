@@ -8,7 +8,6 @@ No evolution code anywhere on this page.
 Run:  python -m streamlit run dashboard/app.py
 """
 
-import csv
 import json
 import os
 import sys
@@ -23,10 +22,9 @@ import streamlit as st
 
 from src.fuzzy_controller import FUZZY_MFS, tri
 from src.ga_fuzzy_controller import load_optimized_mfs
-from src.metrics import COLUMNS  # frozen column contract, never retyped
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
-    build_replay_figure, GEN_COUNT, holdout_ranking, DISPLAY, load_kpi_row
+    build_replay_figure, GEN_COUNT, DISPLAY, load_kpi_row
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -122,7 +120,7 @@ st.pyplot(fig)
 st.subheader("Convergence replay (scrub generations)")
 gen = st.slider("generation", 1, GEN_COUNT, GEN_COUNT, 1)
 g, g_best, _g_mean = replay_slice(gen, best, mean)  # mean shown in figure
-st.metric("replay readout", "gen %d/%d \\u00b7 best %.2f" % (g, GEN_COUNT, g_best))
+st.metric("replay readout", "gen %d/%d · best %.2f" % (g, GEN_COUNT, g_best))
 fig_r = build_replay_figure(best, mean, g)
 st.download_button("Download replay chart (PNG)", data=fig_to_png_bytes(fig_r),
                    file_name="ga_convergence_replay.png", mime="image/png")

@@ -9,7 +9,6 @@ files; every other seed generates to an ephemeral tempfile path.
 Run:  python -m streamlit run dashboard/app.py
 """
 
-import csv
 import functools
 import os
 import sys
@@ -22,15 +21,14 @@ import numpy as np
 
 import streamlit as st
 
-from src.metrics import COLUMNS, all_metrics, run_closed_loop
+from src.metrics import all_metrics, run_closed_loop
 from src.onoff_controller import onoff_step
 from src.pid_controller import pid_step
 from src.fuzzy_controller import fuzzy_step
 from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
 from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
-    scenario_delta, holdout_ranking, DISPLAY, build_controller_trace_figure, \
-    load_kpi_row
+    scenario_delta, DISPLAY, build_controller_trace_figure, load_kpi_row
 
 
 def resolve_weather(seed):
