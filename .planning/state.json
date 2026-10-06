@@ -20,9 +20,9 @@
     }
   ],
   "next": {
-    "command": "/gsd-complete-milestone v1.1",
-    "label": "Complete milestone v1.1",
-    "reason": "v1.1 audit passed 7/7 — archive and tag"
+    "command": "/gsd-new-milestone",
+    "label": "Start next milestone",
+    "reason": "v1.1 shipped 2026-10-06 — define next milestone"
   },
-  "updated_at": "2026-09-29T13:38:40.721Z"
+  "updated_at": "2026-10-06T12:20:58.705Z"
 }
