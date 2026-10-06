@@ -30,7 +30,6 @@ def _stub_streamlit():
     # runner is the only consumer; pages bind the stub at import and need it
     # for the whole session. Revisit if pytest is ever introduced.
     import sys as _sys
-    import types as _types
 
     class _Stub:
         def __getattr__(self, name):

@@ -88,7 +88,6 @@ def _pid_unguarded(T_C, rh_pct, T_sp=25.0, RH_sp=70.0, state=None,
           if state is None else state)
     eT, eH = T_sp - T_C, RH_sp - rh_pct
     dT = 0.0 if st['pT'] is None else (eT - st['pT']) / dt
-    dH = 0.0 if st['pH'] is None else (eH - st['pH']) / dt
     st['pT'], st['pH'] = eT, eH
     st['iT'] += eT * dt                             # no freeze: windup allowed
     st['iH'] += eH * dt

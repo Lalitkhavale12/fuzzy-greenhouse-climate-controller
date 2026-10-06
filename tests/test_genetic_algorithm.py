@@ -135,9 +135,8 @@ def test_hand_mfs_untouched():
 
 
 def test_coupling_zero_gains_identical():
-    import numpy as np
     from src.fuzzy_controller import FUZZY_MFS, fuzzy_step
-    from src.genetic_algorithm import coupled_fuzzy_step, apply_coupling
+    from src.genetic_algorithm import coupled_fuzzy_step
 
     zero = {"k_heat": 0.0, "k_vent": 0.0}
     for T_C, rh in ((20.0, 70.0), (30.0, 50.0), (24.0, 95.0), (18.0, 88.0)):
@@ -223,7 +222,7 @@ def test_tiny_ga_monotonic():
     import time
     import numpy as np
     from src.fuzzy_controller import FUZZY_MFS
-    from src.genetic_algorithm import run_ga, encode
+    from src.genetic_algorithm import run_ga
 
     before = np.concatenate([FUZZY_MFS[k]["centers"] for k in FUZZY_MFS])
     tmp = os.path.join(tempfile.mkdtemp(), "ga_tiny.json")

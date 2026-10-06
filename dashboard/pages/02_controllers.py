@@ -124,14 +124,15 @@ with tE:
     st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
                                             RH_sp, seed_A, seed_B, "energy"))
 
-st.subheader("Robustness: seeds + disturbances + saturation")
-if st.checkbox("Run robustness (25 closed-loop runs, cached)"):
-    st.dataframe(cached_robustness())
-
 @st.cache_data
 def cached_robustness():
     """5 controllers x 5 scenarios, computed once per session."""
     return robustness_table()
+
+
+st.subheader("Robustness: seeds + disturbances + saturation")
+if st.checkbox("Run robustness (25 closed-loop runs, cached)"):
+    st.dataframe(cached_robustness())
 
 
 with st.expander("Provenance"):

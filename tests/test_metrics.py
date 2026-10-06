@@ -49,9 +49,7 @@ def test_energy_identity():
     import numpy as np
     from src.metrics import run_closed_loop, energy_duty_hours, iae
     from src.fuzzy_controller import fuzzy_step, FUZZY_MFS
-    from src.greenhouse_model import (load_weather_profile, wsat_g_per_kg,
-                                      relative_humidity, step as gstep,
-                                      daytime_solar, params)
+    from src.greenhouse_model import load_weather_profile
     from src.genetic_algorithm import closed_loop_breakdown
 
     T_h, RH_h, U_h = run_closed_loop(fuzzy_step,

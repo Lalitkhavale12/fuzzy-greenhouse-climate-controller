@@ -30,7 +30,6 @@ def pid_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
         assert k in gains, f"gains missing key {k!r}"
     eT, eH = T_sp - T_C, RH_sp - rh_pct
     dT = 0.0 if st['pT'] is None else (eT - st['pT']) / dt
-    dH = 0.0 if st['pH'] is None else (eH - st['pH']) / dt
     st['pT'], st['pH'] = eT, eH
     u_raw = gains['Kp_T'] * eT + gains['Ki_T'] * st['iT'] + gains['Kd_T'] * dT
     # conditional integration: freeze T integrator when saturated pushing further
