@@ -2,11 +2,11 @@
 
 ## What This Is
 
-A simulation-and-control study comparing classical and intelligent greenhouse climate controllers. A simulated greenhouse plant (energy-balance ODE driven by actuator states and outdoor weather) is controlled by four controllers — on/off, PID, manually-tuned Mamdani fuzzy, and GA-optimized fuzzy — then scored on temperature/humidity tracking error, energy use, and step-response metrics. The whole thing is a proof-of-work trail of matplotlib notebooks culminating in a Streamlit dashboard. It is an academic/build project: baselines exist to be beaten by the fuzzy/GA controller.
+A simulation-and-control study comparing classical and intelligent greenhouse climate controllers. A simulated greenhouse plant (energy-balance ODE driven by actuator states and outdoor weather) is controlled by five controllers — on/off, PID, manually-tuned Mamdani fuzzy, GA-optimized fuzzy, and supervisory adaptive fuzzy — then scored on temperature/humidity tracking error, energy use, and step-response metrics. The whole thing is a proof-of-work trail of matplotlib notebooks culminating in a five-page Streamlit dashboard. It is an academic/build project: baselines exist to be beaten by the fuzzy/GA controller.
 
 ## Core Value
 
-The GA-optimized fuzzy controller must measurably beat both baselines (on/off and PID) on the combined weighted cost (temperature IAE + humidity IAE + energy) in the simulation, with the comparison reproduced end-to-end from the notebooks.
+The GA-optimized fuzzy controller must measurably beat both baselines (on/off and PID) on the combined weighted cost (temperature IAE + humidity IAE + energy) in the simulation, with the comparison reproduced end-to-end from the notebooks. **Met: GA fuzzy holds holdout rank #1 at cost 114.28.**
 
 ## Business Context
 
@@ -16,34 +16,37 @@ The GA-optimized fuzzy controller must measurably beat both baselines (on/off an
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Simulation plant: temperature/humidity energy-balance model — v1.0
+- ✓ Synthetic outdoor weather profile (day/night CSV) — v1.0
+- ✓ On/off baseline controller — v1.0
+- ✓ PID baseline controller — v1.0
+- ✓ Manually-tuned Mamdani fuzzy controller (5 MFs/var, ~25 rules, centroid) — v1.0
+- ✓ GA optimization of MFs (62-D chromosome, locked weighted fitness, tournament/BLX/gaussian/elitism-2) — v1.0
+- ✓ GA-optimized fuzzy controller (loads params from JSON) — v1.0
+- ✓ Metrics: RMSE, IAE, ISE, settling time, overshoot, total energy — v1.0
+- ✓ Final comparison table across controllers — v1.0
+- ✓ Six milestone notebooks calling into src/ — v1.0
+- ✓ Streamlit dashboard, thin UI wrapper over src/ — v1.0
+- ✓ Dashboard theming, export center (CSV/TXT/PNG), scenario comparison, MF explorer, convergence replay, KPI restyle, evidence ZIP — v1.1
+- ✓ 3D Plant House, overlay chart, sensitivity analysis, robustness table, Pareto frontier, adaptive fuzzy (FUZZ-07) — v1.1
 
 ### Active
 
-- [ ] Simulation plant: temperature/humidity energy-balance model driven by actuator states and outdoor weather
-- [ ] Synthetic outdoor weather profile (day/night temp/humidity cycle from CSV)
-- [ ] On/off baseline controller
-- [ ] PID baseline controller
-- [ ] Manually-tuned Mamdani fuzzy controller (5 MFs/var, ~25 rules, centroid defuzzification)
-- [ ] GA optimization of fuzzy membership functions (real/binary vector chromosome, weighted IAE+energy fitness, selection/crossover/mutation/elitism)
-- [ ] GA-optimized fuzzy controller (loads params from JSON)
-- [ ] Metrics: RMSE, IAE, ISE, settling time, overshoot, total energy
-- [ ] Final comparison table across all four controllers
-- [ ] Six milestone notebooks calling into src/
-- [ ] Streamlit dashboard (four pages, thin UI wrapper over src/)
+(None — next milestone defines its requirements via `/gsd-new-milestone`)
 
 ### Out of Scope
 
 - Real hardware / actuator control — simulation only
 - PID tuning automation — standard hand-tuned P, I, D suffices as a baseline
 - Type-2 or neuro-fuzzy systems — Mamdani + GA is the deliverable
-- Dynamic/adaptive GA (self-tuning population size, adaptive mutation rates) — fixed operators suffice
+- Dynamic/adaptive GA operators (self-tuning population, adaptive mutation) — fixed operators suffice (note: distinct from the shipped adaptive *controller*)
 - Climate forecasting / humidity setpoint scheduling logic — fixed setpoints per the spec
 
 ## Context
 
+- **Shipped:** v1.0 (2026-09-28) + v1.1 Dashboard Polish (2026-10-06). ~3.9k LOC Python across `src/`, `dashboard/`, `tests/`.
+- **Stack:** Python 3.14, NumPy, Streamlit 1.56, Matplotlib, Plotly; pytest (80 checks) + ruff-F gate + notebook execution in CI.
 - **Domain**: fuzzy logic control, PID vs fuzzy benchmarking, genetic algorithm parameter optimization.
-- **Language**: Python. Controllers live in `src/` (or package dir), notebooks import them.
 - **Spec constraints** (from the provided build spec):
   - `greenhouse_model.py` — simulated plant; given timestep + actuator states (heater/fan/fogger duty, vent position) returns next internal temp & humidity via simplified energy-balance ODE; consumes `weather_profile.csv` for outdoor disturbance.
   - Actuators: heater (on/off %), fan/cooler (on/off %), fogger (on/off %), vent position.
@@ -54,37 +57,34 @@ The GA-optimized fuzzy controller must measurably beat both baselines (on/off an
   - `ga_fuzzy_controller.py` — same inference engine, loads params from `ga_optimized_params.json`.
   - `metrics.py` — RMSE, IAE, ISE, settling time, overshoot, total energy from logged sim history; builds final comparison table.
   - Six notebooks — each milestone, plots, calls `src/`. Proof-of-work, not separate logic.
-  - Streamlit dashboard — four pages, sliders/dropdowns into same `src/` functions, live charts. Built last.
+  - Streamlit dashboard — five pages, sliders/dropdowns into same `src/` functions, live charts. Built last.
 
-- **Directories**: controllers under `src/` (or `controllers/`), weather/output data under `weather/`/`results/` or root-level CSVs per spec naming (`weather_profile.csv`, `results/ga_optimized_params.json`). Exact layout is a planning-time decision.
+- **Directories**: controllers under `src/`, weather/output data under `weather/`/`results/`.
 
 ## Constraints
 
-- **Tech**: Python 3, NumPy (numerics), Streamlit (dashboard UI). Plotting via Matplotlib in notebooks. CSV for weather input and GA params (JSON per spec).
+- **Tech**: Python 3, NumPy (numerics), Streamlit (dashboard UI). Plotting via Matplotlib in notebooks, Plotly for the 3D Plant House. CSV for weather input and GA params (JSON per spec).
 - **Order**: hand-tuned fuzzy first, GA second (GA assumes a working fuzzy engine); dashboards last.
 - **Compatibility**: notebooks must run against `src/` functions with no duplicated logic.
+- **Quality gates**: pytest suite + ruff-F lint + frozen `results/`/`weather/` (dashboard reads only, never writes).
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Simulation-only (no hardware) | Spec is a simulation/benchmark study | — Pending |
-| Mamdani fuzzy, triangular MFs, centroid defuzz | Spec: standard, easiest to encode for GA | — Pending |
-| Weighted fitness `w1*IAE_T + w2*IAE_H + w3*energy` | Spec | — Pending |
-| Metrics: RMSE, IAE, ISE, settling, overshoot, energy | Spec | — Pending |
-| Dashboard last | Spec: thin wrapper, requires stable src/ | — Pending |
+| Simulation-only (no hardware) | Spec is a simulation/benchmark study | ✓ Good |
+| Mamdani fuzzy, triangular MFs, centroid defuzz | Spec: standard, easiest to encode for GA | ✓ Good |
+| Weighted fitness `w1*IAE_T + w2*IAE_H + w3*energy` | Spec | ✓ Good (GA 114.28 beats baselines) |
+| Metrics: RMSE, IAE, ISE, settling, overshoot, energy | Spec | ✓ Good |
+| Dashboard last, thin wrapper | Spec: requires stable src/ | ✓ Good |
+| Single `dashboard/helpers.py` for all shared logic | Zero-def pages, one tested source of truth | ✓ Good |
+| Frozen artifacts read-only for dashboard | Reproducibility; BytesIO-only exports | ✓ Good |
+| Checkbox-gated heavy compute | Keeps headless suite fast, user opts into 10-25 run analyses | ✓ Good |
+| CSV-arithmetic Pareto (no sim) | Frontier from frozen rows is exact and instant | ✓ Good |
 
-## Current Milestone: v1.1 Dashboard Polish
+## Current Milestone: SHIPPED v1.1 Dashboard Polish (2026-10-06)
 
-**Goal:** Make the Streamlit dashboard interactive and presentation-grade without touching control logic or frozen artifacts.
-
-**Target features:**
-- Greenhouse theme + layout polish (metric cards, tabs, expanders, mobile-friendly)
-- Export center (scoreboard CSV, verdict summary, chart PNG/PDF downloads)
-- Scenario comparison (two weather scenarios side-by-side)
-- Interactive MF explorer (drag MF centers, watch fuzzy response reshape live)
-- GA convergence replay (generation-by-generation playback)
-- Live-weather mode hookup deferred (needs user-supplied weather API — later milestone)
+Next milestone defines its requirements via `/gsd-new-milestone`.
 
 ## Evolution
 
@@ -104,4 +104,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-09-28 — v1.1 Dashboard Polish started (v1.0: phases 01–07 shipped, core value met)*
+*Last updated: 2026-10-06 — v1.1 Dashboard Polish shipped (v1.0: phases 01–07; core value met, GA 114.28 holdout rank #1)*
