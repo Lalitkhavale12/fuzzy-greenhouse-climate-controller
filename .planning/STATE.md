@@ -22,10 +22,10 @@ current_phase_name: layout-polish-report-bundle
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-09-28)
+See: .planning/PROJECT.md (updated 2026-10-06)
 
 **Core value:** The GA-optimized fuzzy controller must measurably beat both baselines (on/off and PID) on the weighted cost (temperature IAE + humidity IAE + energy) in simulation, reproduced end-to-end from the notebooks. (v1.0 met: GA 114.28 rank 1.)
-**Current focus:** v1.1 Dashboard Polish — Phase 10 ready to plan (Layout Polish + Report Bundle)
+**Current focus:** Planning next milestone (`/gsd-new-milestone`) — v1.1 shipped 2026-10-06
 
 ## Milestones
 
