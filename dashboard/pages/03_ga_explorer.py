@@ -50,8 +50,8 @@ try:
 except (OSError, ValueError, AssertionError, KeyError) as exc:
     st.error("Frozen GA artifact unreadable: %s" % exc)
     st.stop()
-if not (d.get("schema_version") == 2):
-    st.error("stale artifact: schema_version != 2")
+if d.get("schema_version") not in (2, 3):
+    st.error("stale artifact: schema_version not in (2, 3)")
     st.stop()
 best = d["history"]["best"]
 mean = d["history"]["mean"]

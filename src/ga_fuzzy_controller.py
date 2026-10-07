@@ -30,6 +30,7 @@ DEFAULT_PATH = os.path.join(os.path.dirname(os.path.dirname(
 
 _MFS = None
 _GAINS = None
+_RW = None
 _MFS_PATH = None
 _MFS_MTIME = None
 
@@ -43,7 +44,7 @@ def load_optimized_mfs(path: str = DEFAULT_PATH) -> tuple[dict, dict]:
     rewritten artifact reloads); returns defensive deep copies so callers
     cannot mutate the cache.
     """
-    global _MFS, _GAINS, _MFS_PATH, _MFS_MTIME
+    global _MFS, _GAINS, _MFS_PATH, _MFS_MTIME, _RW
     apath = os.path.abspath(path)
     mtime = os.path.getmtime(apath)
     if _MFS is not None and _MFS_PATH == apath and _MFS_MTIME == mtime:
@@ -74,7 +75,32 @@ def load_optimized_mfs(path: str = DEFAULT_PATH) -> tuple[dict, dict]:
         assert lo <= v <= hi, f"coupling {k} in [{lo}, {hi}]"
         gains[k] = v
     _MFS, _GAINS, _MFS_PATH, _MFS_MTIME = mfs, gains, apath, mtime
+    raw_rw = d.get("rule_weights")  # schema v3 only; v2 -> None
+    if raw_rw is None:
+        _RW = None
+    else:
+        assert isinstance(raw_rw, list) and len(raw_rw) == 5, \
+            "rule_weights must be 5 rows"
+        for row in raw_rw:
+            assert isinstance(row, list) and len(row) == 5, \
+                "rule_weights rows must be len-5"
+            assert all(isinstance(x, (int, float))
+                       and not isinstance(x, bool) for x in row), \
+                "rule_weights numbers only"
+            assert all(np.isfinite(row)) and all(x > 0.0 for x in row), \
+                "rule_weights finite positive"
+        _RW = np.array(raw_rw, dtype=float)
     return copy.deepcopy(_MFS), copy.deepcopy(_GAINS)
+
+
+def load_rule_weights(path: str = DEFAULT_PATH) -> np.ndarray | None:
+    """Evolved 5x5 rule weights, or None for schema-v2 artifacts.
+
+    Shares load_optimized_mfs' path+mtime cache (warms it on first call);
+    returns a defensive copy so callers cannot mutate the cache.
+    """
+    load_optimized_mfs(path)
+    return None if _RW is None else _RW.copy()
 
 
 def ga_fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
@@ -86,5 +112,6 @@ def ga_fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)
     assert np.isfinite(dt) and dt > 0
     mfs, gains = load_optimized_mfs(path)
-    act, st = fuzzy_step(T_C, rh_pct, T_sp, RH_sp, state, dt, mfs)
+    rw = load_rule_weights(path)  # None on schema-v2 artifacts
+    act, st = fuzzy_step(T_C, rh_pct, T_sp, RH_sp, state, dt, mfs, rw)
     return apply_coupling(act, rh_pct, RH_sp, gains), st

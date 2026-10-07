@@ -400,7 +400,7 @@ def test_source_audits():
         s = line.strip()
         assert not s.startswith("def "), (fname, s)
         assert not s.startswith("class "), (fname, s)
-    assert "schema_version" in src03 and "== 2" in src03, "03 schema v2 assert"
+    assert "schema_version" in src03 and "(2, 3)" in src03, "03 schema v2/v3 assert"
     src04 = pages.get("04_results.py", "")
     assert "== COLUMNS" in src04, "04 CSV header assert"
     assert "len(rows) == 8" in src04, "04 8-row assert"

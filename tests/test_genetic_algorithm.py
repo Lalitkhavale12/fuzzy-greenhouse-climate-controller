@@ -21,15 +21,16 @@ def test_encode_decode_roundtrip():
     chrom = encode(FUZZY_MFS)
     assert chrom.shape == (CHROM_LEN,), chrom.shape
     assert CHROM_LEN == 62, CHROM_LEN
-    mfs, gains = decode(chrom)
+    mfs, gains, _rw = decode(chrom)
     assert set(mfs) == set(ORDER)
     for k in ORDER:  # hand values bit-identical through the round-trip
         assert np.array_equal(mfs[k]["centers"], FUZZY_MFS[k]["centers"]), k
         assert np.array_equal(mfs[k]["widths"], FUZZY_MFS[k]["widths"]), k
     assert set(gains) == set(COUPLING_KEYS)  # default = zero (hand-equiv)
     assert all(g == 0.0 for g in gains.values()), gains
+    assert _rw.shape == (5, 5) and np.all(_rw == 1.0), _rw  # no weights = ones
     g2 = {"k_heat": 0.02, "k_vent": 0.013}
-    mfs2, back2 = decode(encode(FUZZY_MFS, g2))
+    mfs2, back2, _ = decode(encode(FUZZY_MFS, g2))
     assert back2 == g2, (back2, g2)
     for k in ORDER:
         assert np.array_equal(mfs2[k]["centers"], FUZZY_MFS[k]["centers"]), k
@@ -42,7 +43,7 @@ def test_decode_repair_invariants():
 
     rng = np.random.default_rng(1234)
     for _ in range(20):  # wild chromosomes -> sorted, clipped, finite
-        mfs, gains = decode(rng.uniform(-100, 100, CHROM_LEN))
+        mfs, gains, _ = decode(rng.uniform(-100, 100, CHROM_LEN))
         for k in ORDER:
             c, w = mfs[k]["centers"], mfs[k]["widths"]
             lo, hi, wmin, wmax = BOUNDS[k]
@@ -53,13 +54,14 @@ def test_decode_repair_invariants():
         for k in COUPLING_KEYS:  # gains clipped into bounds, finite
             lo, hi = COUPLING_BOUNDS[k]
             assert np.isfinite(gains[k]) and lo <= gains[k] <= hi, (k, gains)
-    a, _ = decode(rng.uniform(-100, 100, CHROM_LEN))  # fresh arrays, no views
-    b, _ = decode(np.zeros(CHROM_LEN))
+    a, _, _ = decode(rng.uniform(-100, 100, CHROM_LEN))  # fresh, no views
+    b, _, _ = decode(np.zeros(CHROM_LEN))
     a["eT"]["centers"][0] = -999.0
     assert b["eT"]["centers"][0] != -999.0
-    legacy_mfs, legacy_g = decode(np.zeros(60))  # len-60 legacy -> zero gains
+    legacy_mfs, legacy_g, legacy_w = decode(np.zeros(60))  # len-60 -> zero gains
     assert all(g == 0.0 for g in legacy_g.values()), legacy_g
-    for bad in (59, 61, 63):
+    assert np.all(legacy_w == 1.0), legacy_w  # ... and all-ones weights
+    for bad in (59, 61, 63, 86, 88):
         try:
             decode(np.zeros(bad))
         except AssertionError:
@@ -107,7 +109,8 @@ def test_fitness_never_raises():
     w_hr = np.full(1440, 10.0)
     nasty = [np.full(CHROM_LEN, np.nan), np.full(CHROM_LEN, np.inf),
              np.full(CHROM_LEN, 1e300),
-             np.zeros(59), np.zeros(61), np.zeros(63)]
+             np.zeros(59), np.zeros(61), np.zeros(63),
+             np.zeros(86), np.zeros(88)]
     for c in nasty:  # never raises; float out (finite or inf)
         r = evaluate(c, T_hr, w_hr, hours)
         assert isinstance(r, float) and (np.isfinite(r) or r == float("inf")), r
@@ -124,7 +127,7 @@ def test_hand_mfs_untouched():
               for k in FUZZY_MFS}
     rng = np.random.default_rng(0)
     chrom = encode(FUZZY_MFS)
-    mfs, _ = decode(chrom + rng.normal(0, 1, CHROM_LEN))  # decode churn
+    mfs, _, _ = decode(chrom + rng.normal(0, 1, CHROM_LEN))  # decode churn
     gaussian_mutate(chrom.copy(), rng)
     hours = np.arange(0, 1440) / 60.0
     evaluate(chrom, np.full(1440, 20.0), np.full(1440, 10.0), hours)
@@ -210,7 +213,7 @@ def test_json_schema():
         a, _ = ga_fuzzy_step(T_C, rh, 25.0, 70.0, None, 60.0, tmp)
         b, st = fuzzy_step(T_C, rh, 25.0, 70.0, None, 60.0, mfs)
         assert a == apply_coupling(b, rh, 70.0, gains), (T_C, rh, a, b)
-    ref, ref_g = decode(res["best_chrom"])
+    ref, ref_g, _ = decode(res["best_chrom"])
     for k in ref:
         assert np.array_equal(mfs[k]["centers"], ref[k]["centers"]), k
     assert gains == ref_g, (gains, ref_g)
@@ -237,6 +240,57 @@ def test_tiny_ga_monotonic():
     assert np.array_equal(np.concatenate(
         [FUZZY_MFS[k]["centers"] for k in FUZZY_MFS]), before)
     print(f"tiny GA best {hist[0]:.2f} -> {hist[-1]:.2f} in {dt:.1f}s")
+
+
+def test_rule_weights_87d():
+    import os
+    import tempfile
+    import numpy as np
+    from src.fuzzy_controller import FUZZY_MFS, fuzzy_step, infer
+    from src.genetic_algorithm import (encode, decode, evaluate, run_ga,
+                                       FULL_LEN, RW_LO, RW_HI)
+    from src.ga_fuzzy_controller import load_rule_weights, ga_fuzzy_step
+
+    assert FULL_LEN == 87, FULL_LEN
+    rng = np.random.default_rng(7)
+    w = 0.2 + 1.8 * rng.random((5, 5))
+    chrom = encode(FUZZY_MFS, {"k_heat": 0.0, "k_vent": 0.0}, w)
+    assert chrom.shape == (FULL_LEN,), chrom.shape
+    mfs, gains, back = decode(chrom)  # round-trip bit-identical
+    assert np.array_equal(back, w), (back, w)
+    assert set(mfs) == set(FUZZY_MFS)
+    wild, _, wild_w = decode(rng.uniform(-100, 100, FULL_LEN))
+    assert np.all((wild_w >= RW_LO) & (wild_w <= RW_HI)), wild_w  # clipped
+    # all-zero weights silence every rule -> zero output step
+    z, _ = fuzzy_step(15.0, 50.0, 25.0, 70.0, None, 60.0, FUZZY_MFS,
+                      np.zeros((5, 5)))
+    assert all(v == 0.0 for v in z.values()), z
+    assert infer(2.0, 0.0, FUZZY_MFS["eT"]["centers"],
+                 FUZZY_MFS["eT"]["widths"], FUZZY_MFS["deT"]["centers"],
+                 FUZZY_MFS["deT"]["widths"], FUZZY_MFS["du"]["centers"],
+                 FUZZY_MFS["du"]["widths"], -1.0, 1.0,
+                 RW=np.zeros((5, 5))) == 0.0
+    # ones == unweighted: identical closed-loop trace
+    ones = np.ones((5, 5))
+    t1, _ = fuzzy_step(22.0, 66.0, 25.0, 70.0, None, 60.0, FUZZY_MFS, ones)
+    t2, _ = fuzzy_step(22.0, 66.0, 25.0, 70.0, None, 60.0, FUZZY_MFS)
+    assert t1 == t2, (t1, t2)
+    # 87-D evolution smoke: schema 3 artifact, loader applies weights
+    tmp = os.path.join(tempfile.mkdtemp(), "ga_rw.json")
+    res = run_ga(population=3, generations=1, rng_seed=0, out_path=tmp,
+                 rule_weights=True)
+    assert np.isfinite(res["best_fit"]), res
+    assert np.shape(res["best_weights"]) == (5, 5), res["best_weights"]
+    import json
+    with open(tmp) as f:
+        d = json.load(f)
+    assert d["schema_version"] == 3, d["schema_version"]
+    assert len(d["rule_weights"]) == 5, len(d["rule_weights"])
+    assert load_rule_weights(tmp) is not None
+    assert load_rule_weights("results/ga_optimized_params.json") is None
+    a, _ = ga_fuzzy_step(20.0, 70.0, 25.0, 70.0, None, 60.0, tmp)
+    assert set(a) == {"heater", "fan_cooler", "fogger", "vent"}, a
+    print("87-D round-trip, schema-3 save/load, loader applies weights")
 
 
 if __name__ == "__main__":

@@ -44,8 +44,13 @@ def tri(x: float, c: float, w: float) -> float:
 
 def infer(e: float, de: float, EC: np.ndarray, EW: np.ndarray,
           DC: np.ndarray, DW: np.ndarray, OC: np.ndarray, OW: np.ndarray,
-          lo: float, hi: float, n: int = 201) -> float:
-    """Shared Mamdani min-max core with discrete centroid (zero-fire -> 0.0)."""
+          lo: float, hi: float, n: int = 201, RW=None) -> float:
+    """Shared Mamdani min-max core with discrete centroid (zero-fire -> 0.0).
+
+    RW is an optional 5x5 rule-weight multiplier (default all-ones): each
+    rule's firing strength scales by RW[i, j], so the GA can evolve rule
+    emphasis without touching the fixed RULES table.
+    """
     mu_e = np.array([tri(np.clip(e, EC[0], EC[-1]), c, w) for c, w in zip(EC, EW)])
     mu_d = np.array([tri(np.clip(de, DC[0], DC[-1]), c, w) for c, w in zip(DC, DW)])
     grid = np.linspace(lo, hi, n)
@@ -55,6 +60,8 @@ def infer(e: float, de: float, EC: np.ndarray, EW: np.ndarray,
             continue
         for j in range(5):
             f = mu_e[i] if mu_e[i] < mu_d[j] else mu_d[j]  # min implication
+            if RW is not None:
+                f *= float(RW[i, j])
             if f > 0.0:
                 m = np.clip(1.0 - np.abs(grid - OC[RULES[i, j]]) / OW[RULES[i, j]], 0.0, 1.0)
                 np.maximum(agg, np.minimum(f, m), out=agg)  # max aggregation
@@ -64,8 +71,12 @@ def infer(e: float, de: float, EC: np.ndarray, EW: np.ndarray,
 
 def fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
                RH_sp: float = 70.0, state: dict | None = None, dt: float = 60.0,
-               mfs: dict = FUZZY_MFS) -> tuple[dict, dict]:
-    """Incremental dual-loop Mamdani fuzzy. state = {'pT','pH','uT','uH'}."""
+               mfs: dict = FUZZY_MFS, rw=None) -> tuple[dict, dict]:
+    """Incremental dual-loop Mamdani fuzzy. state = {'pT','pH','uT','uH'}.
+
+    rw is an optional 5x5 rule-weight array shared by both loops
+    (default all-ones: identical to unweighted inference).
+    """
     assert np.isfinite(T_C) and np.isfinite(rh_pct)
     assert np.isfinite(T_sp) and np.isfinite(RH_sp)
     assert np.isfinite(dt) and dt > 0
@@ -78,10 +89,10 @@ def fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
     st['pT'], st['pH'] = eT, eH
     du = infer(eT, dT, mfs["eT"]["centers"], mfs["eT"]["widths"],
                mfs["deT"]["centers"], mfs["deT"]["widths"],
-               mfs["du"]["centers"], mfs["du"]["widths"], -1.0, 1.0)
+               mfs["du"]["centers"], mfs["du"]["widths"], -1.0, 1.0, RW=rw)
     dv = infer(eH, dH, mfs["eH"]["centers"], mfs["eH"]["widths"],
                mfs["deH"]["centers"], mfs["deH"]["widths"],
-               mfs["dv"]["centers"], mfs["dv"]["widths"], -1.0, 1.0)  # WR-01: full grid so dv can go negative (accumulation still clipped to [0,1] below)
+               mfs["dv"]["centers"], mfs["dv"]["widths"], -1.0, 1.0, RW=rw)  # WR-01: full grid so dv can go negative (accumulation still clipped to [0,1] below)
     u_new = st['uT'] + du
     if not ((u_new > 1.0 and eT > 0) or (u_new < -1.0 and eT < 0)):  # AW freeze (PID convention)
         st['uT'] = float(np.clip(u_new, -1.0, 1.0))
