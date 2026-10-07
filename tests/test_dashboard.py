@@ -625,6 +625,19 @@ def test_pareto():
     print("pareto: 4 points, %d on frontier" % len(front))
 
 
+def test_rule_table():
+    from dashboard.helpers import rule_table, rule_firing
+    t = rule_table()
+    assert len(t) == 6 and all(len(r) == 6 for r in t), (len(t), len(t[0]))
+    assert t[0][1:] == ["NB", "NS", "ZO", "PS", "PB"], t[0]
+    assert t[3][3] == "ZO", t[3]  # ZO/ZO cell damps
+    f = rule_firing(0.0, 0.0)
+    assert len(f) == 5 and all(len(r) == 5 for r in f)
+    assert all(0.0 <= v <= 1.0 for r in f for v in r)
+    assert f[2][2] == max(v for r in f for v in r), f[2][2]
+    print("rule table 5x5 exact, ZO/ZO dominates at origin")
+
+
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

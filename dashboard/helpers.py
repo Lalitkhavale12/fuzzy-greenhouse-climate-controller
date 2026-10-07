@@ -643,6 +643,26 @@ def build_pareto_figure(points, frontier):
     return fig
 
 
+def rule_table():
+    """5x5 rule consequents as linguistic labels (rows e, cols de)."""
+    from src.fuzzy_controller import RULES, LABELS
+    return [["e/de"] + list(LABELS)] + \
+        [[LABELS[i]] + [LABELS[int(RULES[i, j])] for j in range(5)]
+         for i in range(5)]
+
+
+def rule_firing(e, de):
+    """T-loop per-rule firing strengths at an error point (min-implication)."""
+    from src.fuzzy_controller import FUZZY_MFS, tri
+    EC, EW = FUZZY_MFS["eT"]["centers"], FUZZY_MFS["eT"]["widths"]
+    DC, DW = FUZZY_MFS["deT"]["centers"], FUZZY_MFS["deT"]["widths"]
+    mu_e = [tri(float(np.clip(e, EC[0], EC[-1])), float(c), float(w))
+            for c, w in zip(EC, EW)]
+    mu_d = [tri(float(np.clip(de, DC[0], DC[-1])), float(c), float(w))
+            for c, w in zip(DC, DW)]
+    return [[min(a, b) for b in mu_d] for a in mu_e]
+
+
 if __name__ == "__main__":
     with open(SCOREBOARD_PATH) as _f:
         _rows = list(csv.DictReader(_f))

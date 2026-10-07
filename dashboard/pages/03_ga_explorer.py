@@ -25,7 +25,7 @@ from src.ga_fuzzy_controller import load_optimized_mfs
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
     build_replay_figure, GEN_COUNT, DISPLAY, load_kpi_row, \
-    mf_sensitivity_costs, build_sensitivity_figure
+    mf_sensitivity_costs, build_sensitivity_figure, rule_table, rule_firing
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -137,6 +137,19 @@ if st.checkbox("Run sensitivity (10 closed-loop runs, cached)"):
                        data=fig_to_png_bytes(sens_fig),
                        file_name="ga_sensitivity.png", mime="image/png")
     st.pyplot(sens_fig)
+
+st.subheader("Rule base explorer: 5x5 consequents + live firing")
+st.dataframe(rule_table())
+re_err = st.slider("probe error e", -6.0, 6.0, 0.0, 0.5)
+re_rate = st.slider("probe error-rate de", -0.75, 0.75, 0.0, 0.05)
+fire = rule_firing(re_err, re_rate)
+st.dataframe([["%.2f" % v for v in row] for row in fire])
+_flat = [(fire[i][j], i, j) for i in range(5) for j in range(5)]
+_best, _bi, _bj = max(_flat)
+st.metric("winning rule", "e=%s de=%s -> %s (%.2f)"
+          % (["NB", "NS", "ZO", "PS", "PB"][_bi],
+             ["NB", "NS", "ZO", "PS", "PB"][_bj],
+             rule_table()[_bi + 1][_bj + 1], _best))
 
 st.subheader("Membership before/after: hand solid vs GA dashed")
 MF_KEYS = ["eT", "eH"]
