@@ -259,6 +259,9 @@ def test_rule_weights_87d():
     mfs, gains, back = decode(chrom)  # round-trip bit-identical
     assert np.array_equal(back, w), (back, w)
     assert set(mfs) == set(FUZZY_MFS)
+    hours = np.arange(0, 1440) / 60.0  # 87-D fitness path runs finite
+    fit87 = evaluate(chrom, np.full(1440, 20.0), np.full(1440, 10.0), hours)
+    assert np.isfinite(fit87), fit87
     wild, _, wild_w = decode(rng.uniform(-100, 100, FULL_LEN))
     assert np.all((wild_w >= RW_LO) & (wild_w <= RW_HI)), wild_w  # clipped
     # all-zero weights silence every rule -> zero output step

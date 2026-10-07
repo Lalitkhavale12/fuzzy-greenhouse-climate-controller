@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 
 import streamlit as st
 
-from src.greenhouse_model import step, load_weather_profile, daytime_solar, \
+from src.greenhouse_model import load_weather_profile, daytime_solar, \
     params, step_co2
 from dashboard.helpers import fig_to_png_bytes, DISPLAY, load_kpi_row, \
     ephemeral_weather_path
