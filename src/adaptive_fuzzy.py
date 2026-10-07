@@ -11,6 +11,7 @@ FUZZY_MFS is never mutated. Call protocol matches run_closed_loop.
 import numpy as np
 
 from src.fuzzy_controller import FUZZY_MFS, fuzzy_step
+from src.sensors import sense_plant, tracking_errors
 
 _T_KEYS = ("heater", "fan_cooler", "vent")
 
@@ -25,10 +26,13 @@ def adaptive_fuzzy_step(T_C: float, rh_pct: float, T_sp: float = 25.0,
     assert np.isfinite(dt) and dt > 0
     assert np.isfinite(eta) and eta > 0
     st = ({'pT': None, 'pH': None, 'uT': 0.0, 'uH': 0.0,
-           'gT': 1.0, 'aT': 0.0} if state is None else state)
-    for k in ('pT', 'pH', 'uT', 'uH', 'gT', 'aT'):
+           'gT': 1.0, 'aT': 0.0, 'sens': {'pT': None, 'pH': None}}
+          if state is None else state)
+    for k in ('pT', 'pH', 'uT', 'uH', 'gT', 'aT', 'sens'):
         assert k in st, f"state missing key {k!r}"
-    eT = float(T_sp) - float(T_C)
+    reading = sense_plant(T_C, rh_pct)  # validated sensor acquisition
+    eT, _eH, _dT, _dH = tracking_errors(
+        reading["T_C"], reading["rh_pct"], T_sp, RH_sp, st['sens'], dt)
     st['aT'] = 0.98 * float(st['aT']) + 0.02 * abs(eT)
     if st['aT'] > 1.0:
         st['gT'] = min(2.0, float(st['gT']) + eta)
