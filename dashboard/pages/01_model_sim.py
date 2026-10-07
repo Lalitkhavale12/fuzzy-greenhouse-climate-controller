@@ -18,7 +18,8 @@ import matplotlib.pyplot as plt
 
 import streamlit as st
 
-from src.greenhouse_model import step, load_weather_profile, daytime_solar, params
+from src.greenhouse_model import step, load_weather_profile, daytime_solar, \
+    params, step_co2
 from dashboard.helpers import fig_to_png_bytes, DISPLAY, load_kpi_row, \
     ephemeral_weather_path
 
@@ -35,22 +36,24 @@ def cached_weather(seed):
     return load_weather_profile(path)
 
 
-def run_open_loop(heater, fan, fogger, vent, seed):
-    """Open-loop 24 h trace -> (hours, T_trace, w_trace, rh_trace, T_out_hr, w_out_hr)."""
+def run_open_loop(heater, fan, fogger, vent, co2, seed):
+    """Open-loop 24 h trace -> (hours, T, w, rh, C, T_out, w_out)."""
     t_min, T_out, w_out = cached_weather(seed)
     hours = np.arange(0, 1440) / 60.0  # dt = 60 s -> one step per minute
     T_out_hr = np.interp(hours, t_min, T_out)
     w_out_hr = np.interp(hours, t_min, w_out)
-    act = {"heater": heater, "fan_cooler": fan, "fogger": fogger, "vent": vent}
-    T, w = T_INIT_C, W_INIT  # probe-verified baseline initial condition
-    T_trace, w_trace, rh_trace = [], [], []
+    act = {"heater": heater, "fan_cooler": fan, "fogger": fogger,
+           "vent": vent, "co2_valve": co2}
+    T, w, C = T_INIT_C, W_INIT, 420.0  # probe-verified ICs + outdoor CO2
+    T_trace, w_trace, rh_trace, C_trace = [], [], [], []
     for i, h in enumerate(hours):
         ws = (T_out_hr[i], w_out_hr[i], daytime_solar(h, params["A_sol"]))
-        T, w, rh = step(60.0, act, ws, T, w)
+        T, w, rh, C = step_co2(60.0, act, ws, T, w, C)
         T_trace.append(T)
         w_trace.append(w)
         rh_trace.append(rh)
-    return hours, T_trace, w_trace, rh_trace, T_out_hr, w_out_hr
+        C_trace.append(C)
+    return hours, T_trace, w_trace, rh_trace, C_trace, T_out_hr, w_out_hr
 
 
 st.title("Model Sim — open-loop plant + weather")
@@ -71,14 +74,16 @@ heater = st.slider("heater duty", 0.0, 1.0, 0.8, 0.05)
 fan = st.slider("fan/cooler duty", 0.0, 1.0, 0.0, 0.05)
 fogger = st.slider("fogger duty", 0.0, 1.0, 0.5, 0.05)
 vent = st.slider("vent duty", 0.0, 1.0, 0.25, 0.05)
+co2 = st.slider("CO2 valve duty", 0.0, 1.0, 0.0, 0.05)
 seed = st.slider("weather seed", 1, 50, 7, 1)
 
-hours, T_trace, w_trace, rh_trace, T_out_hr, w_out_hr = run_open_loop(
-    heater, fan, fogger, vent, seed)
+hours, T_trace, w_trace, rh_trace, C_trace, T_out_hr, w_out_hr = run_open_loop(
+    heater, fan, fogger, vent, co2, seed)
 st.metric("inside T range", "[%.2f, %.2f] degC" % (min(T_trace), max(T_trace)))
 st.metric("RH range", "[%.1f, %.1f] %%" % (min(rh_trace), max(rh_trace)))
+st.metric("CO2 range", "[%.0f, %.0f] ppm" % (min(C_trace), max(C_trace)))
 
-fig, ax = plt.subplots(3, 1, figsize=(10, 9))
+fig, ax = plt.subplots(4, 1, figsize=(10, 11))
 fig.patch.set_facecolor("#F7FAF3")  # explicit light figure (theme never touches mpl)
 for _a in ax:
     _a.set_facecolor("#FFFFFF")  # explicit light axes, default C-series data colors
@@ -93,9 +98,12 @@ ax[1].plot(hours, w_out_hr, color="C3", linestyle="--")
 ax[1].set_ylabel("Abs. humidity (g/kg)")
 ax[1].grid(alpha=0.3)
 ax[2].plot(hours, rh_trace, color="C4")
-ax[2].set_xlabel("hour of day")
 ax[2].set_ylabel("RH (%)")
 ax[2].grid(alpha=0.3)
+ax[3].plot(hours, C_trace, color="C5")
+ax[3].set_xlabel("hour of day")
+ax[3].set_ylabel("CO2 (ppm)")
+ax[3].grid(alpha=0.3)
 fig.suptitle("Simulated greenhouse plant - 24h open-loop (slider duties)")
 fig.tight_layout()
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
@@ -103,8 +111,8 @@ st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
 st.pyplot(fig)
 
 with st.expander("Provenance"):
-    st.write("Plant: src/greenhouse_model.py step loop "
-             "(notebooks/01 cells 2-4). "
+    st.write("Plant: src/greenhouse_model.py step_co2 wrapper (thermal core "
+             "is step() verbatim; CO2 accumulates by valve, flushes by vent). "
              "Weather: weather/weather_profile.csv for seed 7 (frozen), "
              "ephemeral profiles otherwise. "
              "Scoreboard: results/comparison.csv (8 rows, frozen). "

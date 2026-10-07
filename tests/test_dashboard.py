@@ -638,6 +638,15 @@ def test_rule_table():
     print("rule table 5x5 exact, ZO/ZO dominates at origin")
 
 
+def test_co2_wiring():
+    src01 = _read("dashboard/pages/01_model_sim.py")
+    assert "step_co2" in src01 and "co2_valve" in src01, "01 CO2 slider+loop"
+    assert "CO2 (ppm)" in src01, "01 CO2 trace panel"
+    src05 = _read("dashboard/pages/05_plant_house.py")
+    assert "co2" in src05.lower(), "05 CO2 enrichment"
+    print("CO2 valve wired on 01, enrichment on 05")
+
+
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

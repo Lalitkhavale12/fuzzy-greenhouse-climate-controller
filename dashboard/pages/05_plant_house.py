@@ -48,13 +48,16 @@ def cached_closed_loop(controller_key, T_sp, RH_sp, seed):
     return T_hist, RH_hist
 
 
-def plant_healths(Tmean, RHmean, T_sp, RH_sp, xs, L):
+def plant_healths(Tmean, RHmean, T_sp, RH_sp, xs, L, co2_ppm=420.0):
     """Per-plant health: house-mean climate + vent-to-wall gradient."""
     # ponytail: illustrative +/-1 C linear gradient, not simulated CFD
     offs = (np.asarray(xs, dtype=float) / L - 0.5) * 2.0
     h = 1.0 - np.abs(Tmean + offs - T_sp) / 10.0 \
         - abs(float(RHmean) - float(RH_sp)) / 40.0
-    return [float(min(1.0, max(0.0, v))) for v in h]
+    # ponytail: illustrative CO2 enrichment bonus (peak near 1000 ppm),
+    # not a photosynthesis model
+    enrich = 1.0 + 0.1 * max(0.0, 1.0 - abs(float(co2_ppm) - 1000.0) / 600.0)
+    return [float(min(1.0, max(0.0, v * enrich))) for v in h]
 
 
 def greenhouse_figure(healths, hour):
@@ -128,13 +131,14 @@ RH_sp = st.slider("humidity setpoint", 50.0, 90.0, 70.0, 1.0)
 controller = st.selectbox("controller", list(DISPLAY), index=3,
                           format_func=lambda k: DISPLAY[k])
 seed = st.slider("weather seed", 1, 50, 7, 1)
+co2 = st.slider("dosed CO2 level (ppm)", 400.0, 1500.0, 420.0, 20.0)
 hour = st.slider("hour of day", 0, 23, 12, 1)
 
 T_hist, RH_hist = cached_closed_loop(controller, T_sp, RH_sp, seed)
 Tmean = float(np.mean(T_hist[-360:]))
 RHmean = float(np.mean(RH_hist[-360:]))
 grid_x = [x for x in np.linspace(1.5, 8.5, 4) for _ in range(3)]
-healths = plant_healths(Tmean, RHmean, T_sp, RH_sp, grid_x, 10.0)
+healths = plant_healths(Tmean, RHmean, T_sp, RH_sp, grid_x, 10.0, co2)
 st.metric("mean crop health", "%.2f" % float(np.mean(healths)),
           "inside [%.1f, %.1f] C, [%.0f, %.0f] %%RH"
           % (min(T_hist), max(T_hist), min(RH_hist), max(RH_hist)))
@@ -150,7 +154,8 @@ with st.expander("Provenance"):
     st.write("Climate: src/metrics.py run_closed_loop (same engine as the "
              "Controllers page). Health: house-mean |T-T_sp| + |RH-RH_sp| "
              "over the last 6 h mapped to 0..1, plus an illustrative "
-             "+/-1 C vent-to-wall gradient and a linear day-fraction growth "
+             "+/-1 C vent-to-wall gradient, a CO2 enrichment bonus peaking "
+             "near 1000 ppm, and a linear day-fraction growth "
              "scale (display heuristics, not agronomy/CFD). "
              "Weather: weather/weather_profile.csv for seed 7 (frozen), "
              "synthetic otherwise.")

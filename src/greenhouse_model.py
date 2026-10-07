@@ -100,3 +100,37 @@ def load_weather_profile(path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]
     assert np.all((rh_pct >= 0.0) & (rh_pct <= 100.0)), "RH must lie in [0, 100]"
     w_out = rh_pct / 100.0 * wsat_g_per_kg(temp_C)
     return t_min, temp_C, w_out
+
+
+C_OUT_PPM = 420.0  # outdoor CO2 baseline
+Q_CO2 = 0.5  # ppm/s injection at co2_valve duty 1.0
+K_LEAK = 2.0e-4  # 1/s passive house leakage toward outdoor
+C_LO, C_HI = 300.0, 2000.0  # display/validity clamp band
+
+
+def step_co2(dt: float, actuators: dict, weather_at_t: tuple,
+             T_C: float, w_gkg: float, C_ppm: float
+             ) -> tuple[float, float, float, float]:
+    """step() plus a CO2 valve state (Claim 1 fifth actuator).
+
+    Thermal/moisture core is untouched: the 4-key subset goes to step()
+    verbatim, so 4-key behavior is bit-identical. CO2 accumulates by valve
+    injection and flushes by vent exchange + passive leak toward C_OUT_PPM.
+    Closed-loop controllers do not dose CO2 (documented); the valve is
+    operated open-loop (Model Sim) or as a dosed level (Plant House).
+    """
+    assert set(actuators) == {"heater", "fan_cooler", "fogger", "vent",
+                              "co2_valve"}, \
+        f"CO2 wrapper needs all five actuator keys, got {set(actuators)}"
+    assert all(np.isfinite(v) and 0.0 <= v <= 1.0
+               for v in actuators.values()), "duties in [0,1]"
+    assert np.isfinite(C_ppm)
+    core = {k: actuators[k]
+            for k in ("heater", "fan_cooler", "fogger", "vent")}
+    T_new, w_new, rh = step(dt, core, weather_at_t, T_C, w_gkg)
+    u_c, u_v = actuators["co2_valve"], actuators["vent"]
+    vent_rate = params["X_v"] * u_v
+    C_new = C_ppm + (Q_CO2 * u_c
+                     - (vent_rate + K_LEAK) * (C_ppm - C_OUT_PPM)) * dt
+    assert np.isfinite(C_new)
+    return T_new, w_new, rh, float(min(max(C_new, C_LO), C_HI))
