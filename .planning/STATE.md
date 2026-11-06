@@ -7,7 +7,7 @@ stopped_at: Phase 10 complete — verified, milestone v1.1 complete
 last_updated: "2026-11-06T00:00:00.000Z"
 last_activity: 2026-11-06
 last_activity_desc: Four claim-coverage gaps landed after v1.1 (sensors, rule explorer, 87-D rule weights, CO2 valve)
-state_head: 3cc8d6487d6071463dc977060d12994eb8288bd6
+state_head: c2f6b1d
 progress:
   total_phases: 7
   completed_phases: 3
@@ -98,7 +98,7 @@ Resume file: none - milestone v1.1 complete
 ## Post-v1.1 Capability Work (not a milestone)
 
 Landed directly on `main` after v1.1 to close claim-coverage gaps. Frozen
-artifacts untouched; suite 89/89 green; ruff-F clean.
+artifacts untouched; suite 90/90 green; ruff-F clean.
 
 | Commit | Gap | What landed |
 |--------|-----|-------------|
@@ -107,10 +107,13 @@ artifacts untouched; suite 89/89 green; ruff-F clean.
 | `dd9b827` | B | 25 rule-weight genes -> 87-D chromosome, schema-3 artifacts, tolerant loader |
 | `16a52e9` | A | `step_co2` fifth actuator wrapper, Model Sim CO2 panel, Plant House enrichment |
 | `3cc8d64` | — | unused-import cleanup, 87-D fitness-path test |
+| `1eea31d` | — | readiness pass: README truth, PNG restore-on-test, CLAIMS.md traceability |
+| `c2f6b1d` | — | `show_figure` closes every figure (pyplot registry leak on Streamlit rerun) |
 
 Docs added: `CLAIMS.md` (claim -> code traceability), README capability section.
-Known non-blockers: no git remote (CI workflow never executed); tests previously
-dirtied `notebooks/*.png` — now snapshotted and restored by `test_notebooks`.
+Known non-blockers: no git remote (CI workflow never executed on GitHub; all three
+workflow steps verified locally, incl. nbconvert HTML of all 6 notebooks, and every
+pin resolves as a cp312/win_amd64 wheel); CO2 remains open-loop by design.
 
 ## Operator Next Steps
 
