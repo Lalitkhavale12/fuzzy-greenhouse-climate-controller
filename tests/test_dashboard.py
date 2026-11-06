@@ -458,7 +458,7 @@ def test_layout_elements():
                 with_stack.pop()
             if stripped.startswith("with "):
                 with_stack.append((indent, stripped))
-            if "st.pyplot" in stripped:
+            if "show_figure" in stripped or "st.pyplot" in stripped:
                 for _, w in with_stack:
                     assert "col" not in w.lower(), (fname, w, stripped)
     print("layout elements: KPI rows equal frozen holdout ga_fuzzy row, "
@@ -636,6 +636,20 @@ def test_rule_table():
     assert all(0.0 <= v <= 1.0 for r in f for v in r)
     assert f[2][2] == max(v for r in f for v in r), f[2][2]
     print("rule table 5x5 exact, ZO/ZO dominates at origin")
+
+
+def test_figures_closed():
+    import matplotlib.pyplot as plt
+    helpers = _import_helpers()
+    before = len(plt.get_fignums())
+    for _ in range(30):  # a Streamlit session reruns its charts every input
+        fig, _ax = plt.subplots()
+        helpers.show_figure(fig)
+    assert len(plt.get_fignums()) == before, \
+        "show_figure leaked figures: %d open" % len(plt.get_fignums())
+    for fname in EXPECTED_PAGES:  # pages must not bypass the closer
+        assert "st.pyplot" not in _read("dashboard/pages/" + fname), fname
+    print("show_figure closes every figure; no page shows one directly")
 
 
 def test_co2_wiring():

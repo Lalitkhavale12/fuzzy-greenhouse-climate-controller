@@ -21,7 +21,8 @@ from dashboard.helpers import (DISPLAY, WEATHERS, holdout_ranking,
                                build_results_figure, fig_to_png_bytes,
                                scoreboard_csv_bytes, verdict_text,
                                evidence_zip_bytes, load_kpi_row,
-                               pareto_frontier, build_pareto_figure)
+                               pareto_frontier, build_pareto_figure,
+                               show_figure)
 
 CSV_PATH = "results/comparison.csv"
 
@@ -86,11 +87,11 @@ st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
 st.download_button("Download evidence pack (ZIP)", data=zip_bytes,
                    file_name="greenhouse_evidence_pack.zip",
                    mime="application/zip")
-st.pyplot(fig)
+show_figure(fig)
 
 st.subheader("Energy vs comfort — holdout Pareto (frozen rows, no sim)")
 pareto_pts, pareto_front = pareto_frontier()
-st.pyplot(build_pareto_figure(pareto_pts, pareto_front))
+show_figure(build_pareto_figure(pareto_pts, pareto_front))
 
 with st.expander("Provenance"):
     st.write("Scoreboard: results/comparison.csv (8 rows, frozen). "

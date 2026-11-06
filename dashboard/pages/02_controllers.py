@@ -29,7 +29,7 @@ from src.ga_fuzzy_controller import ga_fuzzy_step
 from src.weather_profile_generator import generate_weather_profile
 from dashboard.helpers import build_scenario_figure, fig_to_png_bytes, \
     scenario_delta, DISPLAY, build_controller_trace_figure, load_kpi_row, \
-    build_overlay_figure, robustness_table
+    build_overlay_figure, robustness_table, show_figure
 
 
 def resolve_weather(seed):
@@ -109,19 +109,19 @@ overlay_fig = build_overlay_figure(hours_a,
 st.download_button("Download overlay (PNG)",
                    data=fig_to_png_bytes(overlay_fig),
                    file_name="controllers_overlay.png", mime="image/png")
-st.pyplot(overlay_fig)
-st.pyplot(build_overlay_figure(hours_a,
+show_figure(overlay_fig)
+show_figure(build_overlay_figure(hours_a,
                                {n: RH for n, (_, RH, _) in runs_a.items()},
                                RH_sp, series="RH"))
 tT, tH, tE = st.tabs(["Temperature", "Humidity", "Energy"])
 with tT:
-    st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
+    show_figure(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
                                             RH_sp, seed_A, seed_B, "T"))
 with tH:
-    st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
+    show_figure(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
                                             RH_sp, seed_A, seed_B, "RH"))
 with tE:
-    st.pyplot(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
+    show_figure(build_controller_trace_figure(hours_a, runs_a, runs_b, T_sp,
                                             RH_sp, seed_A, seed_B, "energy"))
 
 @st.cache_data

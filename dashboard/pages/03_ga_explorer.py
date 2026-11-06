@@ -25,7 +25,8 @@ from src.ga_fuzzy_controller import load_optimized_mfs
 from dashboard.helpers import fig_to_png_bytes, scratch_mfs_from_deltas, \
     tloop_response_curve, build_explorer_figure, replay_slice, \
     build_replay_figure, GEN_COUNT, DISPLAY, load_kpi_row, \
-    mf_sensitivity_costs, build_sensitivity_figure, rule_table, rule_firing
+    mf_sensitivity_costs, build_sensitivity_figure, rule_table, rule_firing, \
+    show_figure
 
 JSON_PATH = "results/ga_optimized_params.json"
 
@@ -97,7 +98,7 @@ fig3 = build_explorer_figure(grid, hand_vals, scratch_vals)
 st.download_button("Download explorer response (PNG)",
                    data=fig_to_png_bytes(fig3),
                    file_name="ga_explorer_response.png", mime="image/png")
-st.pyplot(fig3)
+show_figure(fig3)
 
 st.subheader("Convergence (50 generations)")
 fig, ax = plt.subplots(figsize=(10, 4))
@@ -116,7 +117,7 @@ ax.grid(alpha=0.3)
 fig.tight_layout()
 st.download_button("Download convergence chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="ga_convergence.png", mime="image/png")
-st.pyplot(fig)
+show_figure(fig)
 
 st.subheader("Convergence replay (scrub generations)")
 gen = st.slider("generation", 1, GEN_COUNT, GEN_COUNT, 1)
@@ -125,7 +126,7 @@ st.metric("replay readout", "gen %d/%d · best %.2f" % (g, GEN_COUNT, g_best))
 fig_r = build_replay_figure(best, mean, g)
 st.download_button("Download replay chart (PNG)", data=fig_to_png_bytes(fig_r),
                    file_name="ga_convergence_replay.png", mime="image/png")
-st.pyplot(fig_r)
+show_figure(fig_r)
 
 st.subheader("MF sensitivity: closed-loop cost per center shift")
 if st.checkbox("Run sensitivity (10 closed-loop runs, cached)"):
@@ -136,7 +137,7 @@ if st.checkbox("Run sensitivity (10 closed-loop runs, cached)"):
     st.download_button("Download sensitivity (PNG)",
                        data=fig_to_png_bytes(sens_fig),
                        file_name="ga_sensitivity.png", mime="image/png")
-    st.pyplot(sens_fig)
+    show_figure(sens_fig)
 
 st.subheader("Rule base explorer: 5x5 consequents + live firing")
 st.dataframe(rule_table())
@@ -182,7 +183,7 @@ fig2.suptitle("coupling k_heat/k_vent = %.3f/%.3f"
 fig2.tight_layout()
 st.download_button("Download MF chart (PNG)", data=fig_to_png_bytes(fig2),
                    file_name="ga_mfs.png", mime="image/png")
-st.pyplot(fig2)
+show_figure(fig2)
 
 with st.expander("Provenance"):
     st.write("GA artifact: results/ga_optimized_params.json (schema v2, "

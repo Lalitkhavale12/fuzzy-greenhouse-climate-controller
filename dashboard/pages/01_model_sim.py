@@ -21,7 +21,7 @@ import streamlit as st
 from src.greenhouse_model import load_weather_profile, daytime_solar, \
     params, step_co2
 from dashboard.helpers import fig_to_png_bytes, DISPLAY, load_kpi_row, \
-    ephemeral_weather_path
+    ephemeral_weather_path, show_figure
 
 T_INIT_C, W_INIT = 29.28, 20.0  # probe-verified baseline initial condition
 
@@ -108,7 +108,7 @@ fig.suptitle("Simulated greenhouse plant - 24h open-loop (slider duties)")
 fig.tight_layout()
 st.download_button("Download chart (PNG)", data=fig_to_png_bytes(fig),
                    file_name="model_sim_chart.png", mime="image/png")
-st.pyplot(fig)
+show_figure(fig)
 
 with st.expander("Provenance"):
     st.write("Plant: src/greenhouse_model.py step_co2 wrapper (thermal core "

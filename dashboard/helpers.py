@@ -193,6 +193,19 @@ def fig_to_png_bytes(fig, dpi=150):
     return buf.getvalue()
 
 
+def show_figure(fig):
+    """Display a figure, then free it.
+
+    st.pyplot does not close, and pyplot keeps every figure in its registry
+    until it is closed, so a rerunning Streamlit session leaks one figure per
+    chart per interaction. The st import is local so helpers stays importable
+    without streamlit (self-check, src-side tooling).
+    """
+    import streamlit as st
+    st.pyplot(fig)
+    plt.close(fig)
+
+
 def _paint_light(fig, axes):
     """Explicit light-figure face + soil-ink colors (theme never touches mpl)."""
     fig.patch.set_facecolor(LIGHT_FACE)
