@@ -2,12 +2,12 @@
 gsd_state_version: "1.0"
 milestone: v1.1
 milestone_name: Dashboard Polish
-status: Awaiting next milestone
+status: Post-v1.1 capability work landed (unplanned, direct commits)
 stopped_at: Phase 10 complete — verified, milestone v1.1 complete
-last_updated: "2026-10-06T12:20:58.636Z"
-last_activity: 2026-10-06
-last_activity_desc: Milestone v1.1 completed and archived
-state_head: d3d00785b5bf40351b3522fa48be12d8cfdf39e4
+last_updated: "2026-11-06T00:00:00.000Z"
+last_activity: 2026-11-06
+last_activity_desc: Four claim-coverage gaps landed after v1.1 (sensors, rule explorer, 87-D rule weights, CO2 valve)
+state_head: 3cc8d6487d6071463dc977060d12994eb8288bd6
 progress:
   total_phases: 7
   completed_phases: 3
@@ -95,6 +95,25 @@ Last session: 2026-09-29T13:18:38.320Z
 Stopped at: Phase 10 context gathered
 Resume file: none - milestone v1.1 complete
 
+## Post-v1.1 Capability Work (not a milestone)
+
+Landed directly on `main` after v1.1 to close claim-coverage gaps. Frozen
+artifacts untouched; suite 89/89 green; ruff-F clean.
+
+| Commit | Gap | What landed |
+|--------|-----|-------------|
+| `7de0a68` | D | `src/sensors.py` (sense_plant, tracking_errors) + adaptive wire-through |
+| `d6167de` | C | `rule_table` / `rule_firing` helpers + GA Explorer rule-base probe |
+| `dd9b827` | B | 25 rule-weight genes -> 87-D chromosome, schema-3 artifacts, tolerant loader |
+| `16a52e9` | A | `step_co2` fifth actuator wrapper, Model Sim CO2 panel, Plant House enrichment |
+| `3cc8d64` | — | unused-import cleanup, 87-D fitness-path test |
+
+Docs added: `CLAIMS.md` (claim -> code traceability), README capability section.
+Known non-blockers: no git remote (CI workflow never executed); tests previously
+dirtied `notebooks/*.png` — now snapshotted and restored by `test_notebooks`.
+
 ## Operator Next Steps
 
 - Start the next milestone with /gsd-new-milestone
+- Before submission: paste exact claim wording into `CLAIMS.md`, apply the
+  energy ("duty-hours") and CO2 (open-loop) wording fixes listed there

@@ -198,16 +198,27 @@ def test_provenance_asserts():
 
 def test_headless_exec():
     import time
-    for rel in _present():
-        nb = _load(rel)
-        ns = {}
-        t0 = time.time()
-        for c in nb.cells:
-            if c.cell_type == "code":
-                exec("".join(c.source), ns)
-        dt = time.time() - t0
-        assert dt < 600.0, (rel, dt)  # hang guard only, not a perf bar
-        print(f"exec-ok {rel.split('/')[-1]} in {dt:.1f}s")
+    # Executing a notebook re-runs its savefig, which rewrites the committed
+    # PNG bytes (matplotlib embeds producer metadata). Snapshot them first and
+    # restore afterwards so a test run never leaves the working tree dirty.
+    pngs = [os.path.join(NB_DIR, rel.split("/")[-1].replace(".ipynb", ".png"))
+            for rel in _present()]
+    snapshot = {p: open(p, "rb").read() for p in pngs if os.path.exists(p)}
+    try:
+        for rel in _present():
+            nb = _load(rel)
+            ns = {}
+            t0 = time.time()
+            for c in nb.cells:
+                if c.cell_type == "code":
+                    exec("".join(c.source), ns)
+            dt = time.time() - t0
+            assert dt < 600.0, (rel, dt)  # hang guard only, not a perf bar
+            print(f"exec-ok {rel.split('/')[-1]} in {dt:.1f}s")
+    finally:
+        for path, blob in snapshot.items():
+            with open(path, "wb") as f:
+                f.write(blob)
 
 
 def test_results_untracked_changes():
