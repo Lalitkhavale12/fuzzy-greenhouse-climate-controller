@@ -173,8 +173,13 @@ def all_metrics(T_hist: list, RH_hist: list, U_hist: list,
     return m
 
 
-def compare(out_path: str = "results/comparison.csv") -> list:
-    """Scoreboard: 4 controllers x 2 weathers -> list of 8 dicts + CSV.
+def compare(out_path: str | None = None) -> list:
+    """Scoreboard: 4 controllers x 2 weathers -> list of 8 dicts.
+
+    Writes the CSV only when out_path is given; the default is read-only,
+    so tests can score without clobbering the frozen results/comparison.csv
+    (float noise differs across platforms). Regenerate it explicitly with
+    ``python -m src.metrics``.
 
     Rows carry exactly the COLUMNS keys. rank 1..4 by cost WITHIN each
     weather block (sorted-stable: equal-cost ties keep first-seen order).
@@ -191,16 +196,17 @@ def compare(out_path: str = "results/comparison.csv") -> list:
         for i, r in enumerate(sorted(block, key=lambda r: r["cost"]), 1):
             r["rank"] = i
         rows.extend(block)
-    d = os.path.dirname(os.path.abspath(out_path))
-    os.makedirs(d, exist_ok=True)
-    with open(out_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=COLUMNS)
-        writer.writeheader()
-        writer.writerows(rows)
+    if out_path is not None:
+        d = os.path.dirname(os.path.abspath(out_path))
+        os.makedirs(d, exist_ok=True)
+        with open(out_path, "w", newline="") as f:
+            writer = csv.DictWriter(f, fieldnames=COLUMNS)
+            writer.writeheader()
+            writer.writerows(rows)
     return rows
 
 
 if __name__ == "__main__":
-    for r in compare():
+    for r in compare("results/comparison.csv"):
         print(r["controller"], r["weather"],
               f"cost={r['cost']:.2f} rank={r['rank']}")

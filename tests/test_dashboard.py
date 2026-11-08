@@ -215,7 +215,7 @@ def test_scenario_delta():
     runs_a, runs_b, delta_rows = helpers.run_scenario_pair(
         25.0, 70, 7, 21, cached_runner)
     cold_dt = time.time() - t0
-    assert cold_dt < 15.0, cold_dt  # hang guard only (WR-03); measured ~4.5 s
+    assert cold_dt < 120.0, cold_dt  # hang guard only (WR-03); ~4.5 s Windows, ~15 s Linux CI
     assert len(calls) == 2, calls  # one cached call per side, never more
     t0 = time.time()
     runs_a2, runs_b2, delta2 = helpers.run_scenario_pair(

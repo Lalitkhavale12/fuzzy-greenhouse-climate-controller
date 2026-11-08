@@ -79,10 +79,15 @@ def test_compare_shape():
     import time
     from src.metrics import compare, COLUMNS
 
+    frozen = "results/comparison.csv"
+    with open(frozen, "rb") as f:
+        before = f.read()
     t0 = time.time()
-    rows = compare()  # default path results/comparison.csv
+    rows = compare()  # default is read-only: must not touch results/comparison.csv
     dt = time.time() - t0
     assert dt < 600.0, dt  # hang guard only, not a perf bar
+    with open(frozen, "rb") as f:
+        assert f.read() == before, "compare() default path rewrote the frozen CSV"
     assert len(rows) == 8, len(rows)
     assert len(COLUMNS) == 14, COLUMNS
     for r in rows:
